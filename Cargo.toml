@@ -29,7 +29,7 @@ features = [
 ]
 
 [target.'cfg(not(target_family = "wasm"))'.dependencies]
-nusb = "0.1.2"
+nusb = "0.1.4"
 
 [profile.release]
 opt-level = "s"
