@@ -1,3 +1,4 @@
+#![cfg_attr(debug_assertions, allow(async_fn_in_trait))]
 use std::error::Error;
 
 use crate::context::UsbInterface;
