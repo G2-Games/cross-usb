@@ -1,7 +1,7 @@
 #![cfg_attr(debug_assertions, allow(dead_code, unused_imports))]
 use std::error::Error;
 use wasm_bindgen::prelude::*;
-use js_sys::JSON;
+use gloo::console::log;
 
 use web_sys::{
     console,
@@ -14,7 +14,7 @@ use web_sys::{
     UsbRequestType,
     UsbDeviceRequestOptions,
 };
-use js_sys::{Array, Uint8Array, Promise};
+use js_sys::{Array, Uint8Array, Promise, Object};
 use wasm_bindgen_futures::JsFuture;
 
 // Crate stuff
@@ -89,7 +89,6 @@ impl Device for UsbDevice {
                 return Err(format!("{:?}", err).into())
             },
         };
-        //let interface: WasmUsbInterface = dev_promise.await.unwrap().into();
 
         Ok(UsbInterface {
             device: self.device.clone()
@@ -121,9 +120,9 @@ impl<'a> Interface<'a> for UsbInterface {
         let length = data.length;
         let params: UsbControlTransferParameters = data.into();
 
-        let promise = Promise::resolve(&self.device.control_transfer_in(&params, length));
-
-        let result = JsFuture::from(promise).await;
+        let result = JsFuture::from(Promise::resolve(
+                &self.device.control_transfer_in(&params, length)
+            )).await;
 
         let transfer_result: UsbInTransferResult = match result {
             Ok(res) => res.into(),
@@ -141,13 +140,15 @@ impl<'a> Interface<'a> for UsbInterface {
     }
 
     async fn control_out(&self, data: crate::usb::ControlOut<'a>) -> Result<(), Box<dyn Error>> {
-        let params = data.into();
-        let promise = Promise::resolve(&self.device.control_transfer_out(&params));
+        let array = Uint8Array::from(data.data);
+        let array_obj = Object::try_from(&array).unwrap();
+        let params: UsbControlTransferParameters = data.into();
 
+        let promise = Promise::resolve(&self.device.control_transfer_out_with_buffer_source(&params, &array_obj));
         let result = JsFuture::from(promise).await;
 
         match result {
-            Ok(_) => Ok(()),
+            Ok(res) => Ok(()),
             Err(err) => Err(format!("{:?}", err).into()),
         }
     }
