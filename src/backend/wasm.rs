@@ -1,7 +1,6 @@
 #![cfg_attr(debug_assertions, allow(dead_code, unused_imports))]
 use std::error::Error;
 use wasm_bindgen::prelude::*;
-use gloo::console::log;
 
 use web_sys::{
     console,
@@ -82,7 +81,7 @@ impl Device for UsbDevice {
         let dev_promise = JsFuture::from(Promise::resolve(&self.device.claim_interface(number))).await;
 
         // Wait for the interface to be claimed
-        let device: WasmUsbDevice = match dev_promise {
+        let _device: WasmUsbDevice = match dev_promise {
             Ok(dev) => dev.into(),
             Err(err) => {
                 console::log_1(&err.clone());
@@ -159,11 +158,11 @@ impl<'a> Interface<'a> for UsbInterface {
         let array_obj = Object::try_from(&array).unwrap();
         let params: UsbControlTransferParameters = data.into();
 
-        let promise = Promise::resolve(&self.device.control_transfer_out_with_buffer_source(&params, &array_obj));
+        let promise = Promise::resolve(&self.device.control_transfer_out_with_buffer_source(&params, array_obj));
         let result = JsFuture::from(promise).await;
 
         match result {
-            Ok(res) => Ok(()),
+            Ok(_) => Ok(()),
             Err(err) => Err(format!("{:?}", err).into()),
         }
     }
