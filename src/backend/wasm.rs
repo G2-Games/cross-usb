@@ -9,6 +9,7 @@ use web_sys::{
     UsbDevice as WasmUsbDevice,
     UsbInterface as WasmUsbInterface,
     UsbControlTransferParameters,
+    UsbInTransferResult,
     UsbRecipient,
     UsbRequestType,
     UsbDeviceRequestOptions,
@@ -59,16 +60,14 @@ pub async fn get_device(vendor_id: u16, product_id: u16) -> Result<UsbDevice, js
     let device_promise = JsFuture::from(Promise::resolve(&usb.request_device(&filters2))).await;
 
     let device: WasmUsbDevice = match device_promise {
-        Ok(res) => res.into(),
+        Ok(dev) => dev.into(),
         Err(err) => {
-            console::log_1(&err.clone().into());
+            console::log_1(&err.clone());
             return Err(err.into())
         },
     };
 
-    let _open_promise = JsFuture::from(Promise::resolve(&device.open()));
-
-    console::log_1(&"got device".into());
+    let _open_promise = JsFuture::from(Promise::resolve(&device.open())).await?;
 
     Ok(UsbDevice {
         device
@@ -80,10 +79,17 @@ impl Device for UsbDevice {
     type UsbInterface = UsbInterface;
 
     async fn open_interface(&self, number: u8) -> Result<UsbInterface, Box<dyn Error>> {
-        let dev_promise = JsFuture::from(Promise::resolve(&self.device.claim_interface(number)));
+        let dev_promise = JsFuture::from(Promise::resolve(&self.device.claim_interface(number))).await;
 
         // Wait for the interface to be claimed
-        let result = dev_promise;
+        let device: WasmUsbDevice = match dev_promise {
+            Ok(dev) => dev.into(),
+            Err(err) => {
+                console::log_1(&err.clone());
+                return Err(format!("{:?}", err).into())
+            },
+        };
+        //let interface: WasmUsbInterface = dev_promise.await.unwrap().into();
 
         Ok(UsbInterface {
             device: self.device.clone()
@@ -97,55 +103,60 @@ impl Device for UsbDevice {
 
         match result {
             Ok(_) => Ok(()),
-            Err(_) => {
-                console::log_1(&"Cancelled".into());
-                return Err("cancelled".into())
-            },
+            Err(_) => Err("cancelled".into()),
         }
+    }
+
+    async fn vendor_id(&self) -> u16 {
+        self.device.vendor_id()
+    }
+
+    async fn product_id(&self) -> u16 {
+        self.device.product_id()
     }
 }
 
 impl<'a> Interface<'a> for UsbInterface {
     async fn control_in(&self, data: crate::usb::ControlIn) -> Result<Vec<u8>, Box<dyn Error>> {
         let length = data.length;
-        let params = data.into();
+        let params: UsbControlTransferParameters = data.into();
+
         let promise = Promise::resolve(&self.device.control_transfer_in(&params, length));
 
-        let mut result = JsFuture::from(promise).await;
+        let result = JsFuture::from(promise).await;
 
-        let data = match result {
+        let transfer_result: UsbInTransferResult = match result {
             Ok(res) => res.into(),
-            Err(_) => {
-                console::log_1(&"Cancelled".into());
-                return Err("cancelled".into())
-            },
+            Err(err) => return Err(format!("Error {:?}", err).into()),
         };
 
-        let unitarray = Uint8Array::new(&data);
+        let data = match transfer_result.data() {
+            Some(res) => res.buffer(),
+            None => return Err("No data returned".into()),
+        };
 
-        Ok(unitarray.to_vec())
+        let array = Uint8Array::new(&data);
+
+        Ok(array.to_vec())
     }
 
     async fn control_out(&self, data: crate::usb::ControlOut<'a>) -> Result<(), Box<dyn Error>> {
         let params = data.into();
         let promise = Promise::resolve(&self.device.control_transfer_out(&params));
 
-        let mut result = JsFuture::from(promise).await;
+        let result = JsFuture::from(promise).await;
 
         match result {
             Ok(_) => Ok(()),
-            Err(err) => {
-                console::log_1(&"Cancelled".into());
-                Err(format!("{:?}", err).into())
-            },
+            Err(err) => Err(format!("{:?}", err).into()),
         }
     }
 
-    async fn bulk_in(&self, _endpoint: u8, _buf: Vec<u8>) -> Result<Vec<u8>, Box<dyn Error>> {
+    async fn bulk_in(&self, _endpoint: u8, _length: usize) -> Result<Vec<u8>, Box<dyn Error>> {
         todo!()
     }
 
-    async fn bulk_out(&self, _endpoint: u8, _buf: Vec<u8>) -> Result<(), Box<dyn Error>> {
+    async fn bulk_out(&self, _endpoint: u8, _data: Vec<u8>) -> Result<usize, Box<dyn Error>> {
         todo!()
     }
 }
@@ -155,7 +166,7 @@ impl From<ControlIn> for UsbControlTransferParameters {
         UsbControlTransferParameters::new(
             value.index,
             value.recipient.into(),
-            value.request.into(),
+            value.request,
             value.control_type.into(),
             value.value
         )
@@ -167,7 +178,7 @@ impl From<ControlOut<'_>> for UsbControlTransferParameters {
         UsbControlTransferParameters::new(
             value.index,
             value.recipient.into(),
-            value.request.into(),
+            value.request,
             value.control_type.into(),
             value.value
         )

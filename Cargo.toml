@@ -1,5 +1,5 @@
 [package]
-name = "cross-usb"
+name = "cross_usb"
 version = "0.1.0"
 authors = ["G2-Games <ke0bhogsg@gmail.com>"]
 edition = "2021"
@@ -25,6 +25,7 @@ features = [
     "UsbRequestType",
     "UsbControlTransferParameters",
     "UsbDeviceRequestOptions",
+    "UsbInTransferResult",
     "Storage"
 ]
 
@@ -33,6 +34,9 @@ nusb = "0.1.4"
 
 [profile.release]
 opt-level = "s"
+
+[dependencies]
+thiserror = "1.0.56"
 
 [package.metadata.wasm-pack.profile.dev.wasm-bindgen]
 dwarf-debug-info = true
