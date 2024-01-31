@@ -1,10 +1,17 @@
 #![allow(async_fn_in_trait)]
+//! This module contains the traits and associated functions and
+//! structs which allow for USB communication.
+//!
+
 use crate::context::UsbInterface;
 use std::error::Error;
 
 /// A unique USB device
 pub trait Device {
+    /// A unique USB Device
     type UsbDevice;
+
+    /// A unique Interface on a USB Device
     type UsbInterface;
 
     /// Open a specific interface of the device
@@ -51,6 +58,7 @@ pub trait Interface<'a> {
     /// Returns a [Result] with the number of bytes transferred
     async fn bulk_out(&self, endpoint: u8, data: &[u8]) -> Result<usize, Box<dyn Error>>;
 
+    /* Interrupt transfers are a work in progress
     async fn interrupt_in(&self, _endpoint: u8, _buf: Vec<u8>) {
         unimplemented!()
     }
@@ -58,14 +66,17 @@ pub trait Interface<'a> {
     async fn interrupt_out(&self, _endpoint: u8, _buf: Vec<u8>) {
         unimplemented!()
     }
+    */
 }
 
+/// The type of USB transfer
 pub enum ControlType {
     Standard = 0,
     Class = 1,
     Vendor = 2,
 }
 
+/// The recipient of a USB transfer
 pub enum Recipient {
     Device = 0,
     Interface = 1,
@@ -73,6 +84,7 @@ pub enum Recipient {
     Other = 3,
 }
 
+/// Parameters for [Interface::control_in]
 pub struct ControlIn {
     pub control_type: ControlType,
     pub recipient: Recipient,
@@ -82,6 +94,7 @@ pub struct ControlIn {
     pub length: u16,
 }
 
+/// Parameters for [Interface::control_out]
 pub struct ControlOut<'a> {
     pub control_type: ControlType,
     pub recipient: Recipient,

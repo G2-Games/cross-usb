@@ -1,4 +1,3 @@
-use nusb;
 use std::error::Error;
 
 use crate::usb::{ControlIn, ControlOut, ControlType, Device, Interface, Recipient};

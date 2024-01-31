@@ -1,4 +1,3 @@
-#![warn(missing_docs)]
 //! Cross USB is a USB library which works seamlessly across native and WASM targets.
 //!
 //! The idea is the user only has to write one way to access USB devices, which can be compiled
@@ -31,11 +30,21 @@ pub mod usb;
 
 #[cfg(not(target_family = "wasm"))]
 #[path = "./backend/native.rs"]
-pub mod context;
+/// The context contains the platform specific implementation of the USB transfers
+mod context;
 
 #[cfg(target_family = "wasm")]
 #[path = "./backend/wasm.rs"]
-pub mod context;
+/// The context contains the platform specific implementation of the USB transfers
+mod context;
+
+#[doc(inline)]
+/// An implementation of a USB device
+pub use crate::context::UsbDevice;
+
+#[doc(inline)]
+/// An implementation of a USB interface
+pub use crate::context::UsbInterface;
 
 /// Gets a single device from the VendorID and ProductID
 #[doc(inline)]
