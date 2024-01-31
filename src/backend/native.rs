@@ -12,7 +12,6 @@ pub struct UsbInterface {
     interface: nusb::Interface,
 }
 
-/// Gets a single device from the VendorID and ProductID
 pub async fn get_device(vendor_id: u16, product_id: u16) -> Result<UsbDevice, Box<dyn Error>> {
     let devices = nusb::list_devices().unwrap();
 
@@ -100,8 +99,8 @@ impl<'a> Interface<'a> for UsbInterface {
         Ok(self.interface.bulk_in(endpoint, request_buffer).await.into_result()?)
     }
 
-    async fn bulk_out(&self, endpoint: u8, data: Vec<u8>) -> Result<usize, Box<dyn Error>> {
-        match self.interface.bulk_out(endpoint, data).await.into_result() {
+    async fn bulk_out(&self, endpoint: u8, data: &[u8]) -> Result<usize, Box<dyn Error>> {
+        match self.interface.bulk_out(endpoint, data.to_vec()).await.into_result() {
             Ok(len) => Ok(len.actual_length()),
             Err(e) => Err(e.into())
         }

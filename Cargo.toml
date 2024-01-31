@@ -2,6 +2,17 @@
 name = "cross_usb"
 version = "0.1.0"
 authors = ["G2-Games <ke0bhogsg@gmail.com>"]
+repository = "https://github.com/G2-Games/cross-usb"
+documentation = "https://docs.rs/cross_usb"
+
+description = """
+A a Rust USB library which works seamlessly across both native and WASM targets
+"""
+
+keywords = ["usb", "wasm", "web-usb"]
+categories = ["wasm", "web-programming", "hardware-support"]
+readme = "README.md"
+license = "AGPL-3.0"
 edition = "2021"
 
 [lib]
@@ -28,6 +39,7 @@ features = [
     "UsbControlTransferParameters",
     "UsbDeviceRequestOptions",
     "UsbInTransferResult",
+    "UsbOutTransferResult",
     "Storage"
 ]
 

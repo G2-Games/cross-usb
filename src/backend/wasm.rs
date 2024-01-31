@@ -10,6 +10,7 @@ use web_sys::{
     UsbInterface as WasmUsbInterface,
     UsbControlTransferParameters,
     UsbInTransferResult,
+    UsbOutTransferResult,
     UsbRecipient,
     UsbRequestType,
     UsbDeviceRequestOptions,
@@ -30,7 +31,6 @@ pub struct UsbInterface {
     device: WasmUsbDevice,
 }
 
-/// Gets a single device from the VendorID and ProductID
 #[wasm_bindgen]
 pub async fn get_device(vendor_id: u16, product_id: u16) -> Result<UsbDevice, js_sys::Error> {
     let window = web_sys::window().unwrap();
@@ -136,9 +136,8 @@ impl<'a> Interface<'a> for UsbInterface {
         let length = data.length;
         let params: UsbControlTransferParameters = data.into();
 
-        let result = JsFuture::from(Promise::resolve(
-                &self.device.control_transfer_in(&params, length)
-            )).await;
+        let promise = Promise::resolve(&self.device.control_transfer_in(&params, length));
+        let result = JsFuture::from(promise).await;
 
         let transfer_result: UsbInTransferResult = match result {
             Ok(res) => res.into(),
@@ -169,12 +168,40 @@ impl<'a> Interface<'a> for UsbInterface {
         }
     }
 
-    async fn bulk_in(&self, _endpoint: u8, _length: usize) -> Result<Vec<u8>, Box<dyn Error>> {
-        todo!()
+    async fn bulk_in(&self, endpoint: u8, length: usize) -> Result<Vec<u8>, Box<dyn Error>> {
+        let promise = Promise::resolve(&self.device.transfer_in(endpoint, length as u32));
+
+        let result = JsFuture::from(promise).await;
+
+        let transfer_result: UsbInTransferResult = match result {
+            Ok(res) => res.into(),
+            Err(err) => return Err(format!("Error {:?}", err).into()),
+        };
+
+        let data = match transfer_result.data() {
+            Some(res) => res.buffer(),
+            None => return Err("No data returned".into()),
+        };
+
+        let array = Uint8Array::new(&data);
+
+        Ok(array.to_vec())
     }
 
-    async fn bulk_out(&self, _endpoint: u8, _data: Vec<u8>) -> Result<usize, Box<dyn Error>> {
-        todo!()
+    async fn bulk_out(&self, endpoint: u8, data: &[u8]) -> Result<usize, Box<dyn Error>> {
+        let array = Uint8Array::from(data);
+        let array_obj = Object::try_from(&array).unwrap();
+
+        let promise = Promise::resolve(&self.device.transfer_out_with_buffer_source(endpoint, array_obj));
+
+        let result = JsFuture::from(promise).await;
+
+        let transfer_result: UsbOutTransferResult = match result {
+            Ok(res) => res.into(),
+            Err(err) => return Err(format!("Error {:?}", err).into()),
+        };
+
+        Ok(transfer_result.bytes_written() as usize)
     }
 }
 

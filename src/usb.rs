@@ -37,16 +37,19 @@ pub trait Device {
 /// A specific interface of a USB device
 pub trait Interface<'a> {
     /// A USB control in transfer (device to host)
+    /// Returns a [Result] with the bytes in a `Vec<u8>`
     async fn control_in(&self, data: ControlIn) -> Result<Vec<u8>, Box<dyn Error>>;
 
     /// A USB control out transfer (host to device)
     async fn control_out(&self, data: ControlOut<'a>) -> Result<(), Box<dyn Error>>;
 
     /// A USB bulk in transfer (device to host)
+    /// Returns a [Result] with the bytes in a `Vec<u8>`
     async fn bulk_in(&self, endpoint: u8, length: usize) -> Result<Vec<u8>, Box<dyn Error>>;
 
-    /// A USB bulk out transfer (host to device)
-    async fn bulk_out(&self, endpoint: u8, data: Vec<u8>) -> Result<usize, Box<dyn Error>>;
+    /// A USB bulk out transfer (host to device).
+    /// Returns a [Result] with the number of bytes transferred
+    async fn bulk_out(&self, endpoint: u8, data: &[u8]) -> Result<usize, Box<dyn Error>>;
 
     async fn interrupt_in(&self, _endpoint: u8, _buf: Vec<u8>) {
         unimplemented!()
