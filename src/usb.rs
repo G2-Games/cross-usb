@@ -1,6 +1,6 @@
 #![cfg_attr(debug_assertions, allow(async_fn_in_trait))]
-use std::error::Error;
 use crate::context::UsbInterface;
+use std::error::Error;
 
 /// A unique USB device
 pub trait Device {
@@ -88,5 +88,5 @@ pub struct ControlOut<'a> {
     pub request: u8,
     pub value: u16,
     pub index: u16,
-    pub data: &'a[u8],
+    pub data: &'a [u8],
 }

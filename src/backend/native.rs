@@ -1,5 +1,5 @@
-use std::error::Error;
 use nusb;
+use std::error::Error;
 
 use crate::usb::{ControlIn, ControlOut, ControlType, Device, Interface, Recipient};
 
@@ -32,7 +32,7 @@ pub async fn get_device(vendor_id: u16, product_id: u16) -> Result<UsbDevice, Bo
 
     Ok(UsbDevice {
         device_info,
-        device
+        device,
     })
 }
 
@@ -52,7 +52,7 @@ impl Device for UsbDevice {
     async fn reset(&self) -> Result<(), Box<dyn Error>> {
         match self.device.reset() {
             Ok(_) => Ok(()),
-            Err(e) => Err(e.into())
+            Err(e) => Err(e.into()),
         }
     }
 
@@ -89,20 +89,29 @@ impl<'a> Interface<'a> for UsbInterface {
     async fn control_out(&self, data: ControlOut<'a>) -> Result<(), Box<dyn Error>> {
         match self.interface.control_out(data.into()).await.into_result() {
             Ok(_) => Ok(()),
-            Err(e) => Err(e.into())
+            Err(e) => Err(e.into()),
         }
     }
 
     async fn bulk_in(&self, endpoint: u8, length: usize) -> Result<Vec<u8>, Box<dyn Error>> {
         let request_buffer = nusb::transfer::RequestBuffer::new(length);
 
-        Ok(self.interface.bulk_in(endpoint, request_buffer).await.into_result()?)
+        Ok(self
+            .interface
+            .bulk_in(endpoint, request_buffer)
+            .await
+            .into_result()?)
     }
 
     async fn bulk_out(&self, endpoint: u8, data: &[u8]) -> Result<usize, Box<dyn Error>> {
-        match self.interface.bulk_out(endpoint, data.to_vec()).await.into_result() {
+        match self
+            .interface
+            .bulk_out(endpoint, data.to_vec())
+            .await
+            .into_result()
+        {
             Ok(len) => Ok(len.actual_length()),
-            Err(e) => Err(e.into())
+            Err(e) => Err(e.into()),
         }
     }
 }
@@ -146,7 +155,6 @@ impl From<ControlType> for nusb::transfer::ControlType {
 impl From<Recipient> for nusb::transfer::Recipient {
     fn from(val: Recipient) -> Self {
         match val {
-
             Recipient::Device => nusb::transfer::Recipient::Device,
             Recipient::Interface => nusb::transfer::Recipient::Interface,
             Recipient::Endpoint => nusb::transfer::Recipient::Endpoint,

@@ -2,20 +2,13 @@
 use std::error::Error;
 use wasm_bindgen::prelude::*;
 
-use web_sys::{
-    console,
-    Usb,
-    UsbDevice as WasmUsbDevice,
-    UsbInterface as WasmUsbInterface,
-    UsbControlTransferParameters,
-    UsbInTransferResult,
-    UsbOutTransferResult,
-    UsbRecipient,
-    UsbRequestType,
-    UsbDeviceRequestOptions,
-};
-use js_sys::{Array, Uint8Array, Promise, Object};
+use js_sys::{Array, Object, Promise, Uint8Array};
 use wasm_bindgen_futures::JsFuture;
+use web_sys::{
+    console, Usb, UsbControlTransferParameters, UsbDevice as WasmUsbDevice,
+    UsbDeviceRequestOptions, UsbInTransferResult, UsbInterface as WasmUsbInterface,
+    UsbOutTransferResult, UsbRecipient, UsbRequestType,
+};
 
 // Crate stuff
 use crate::usb::{ControlIn, ControlOut, ControlType, Device, Interface, Recipient};
@@ -62,15 +55,13 @@ pub async fn get_device(vendor_id: u16, product_id: u16) -> Result<UsbDevice, js
         Ok(dev) => dev.into(),
         Err(err) => {
             console::log_1(&err.clone());
-            return Err(err.into())
-        },
+            return Err(err.into());
+        }
     };
 
     let _open_promise = JsFuture::from(Promise::resolve(&device.open())).await?;
 
-    Ok(UsbDevice {
-        device
-    })
+    Ok(UsbDevice { device })
 }
 
 impl Device for UsbDevice {
@@ -78,19 +69,20 @@ impl Device for UsbDevice {
     type UsbInterface = UsbInterface;
 
     async fn open_interface(&self, number: u8) -> Result<UsbInterface, Box<dyn Error>> {
-        let dev_promise = JsFuture::from(Promise::resolve(&self.device.claim_interface(number))).await;
+        let dev_promise =
+            JsFuture::from(Promise::resolve(&self.device.claim_interface(number))).await;
 
         // Wait for the interface to be claimed
         let _device: WasmUsbDevice = match dev_promise {
             Ok(dev) => dev.into(),
             Err(err) => {
                 console::log_1(&err.clone());
-                return Err(format!("{:?}", err).into())
-            },
+                return Err(format!("{:?}", err).into());
+            }
         };
 
         Ok(UsbInterface {
-            device: self.device.clone()
+            device: self.device.clone(),
         })
     }
 
@@ -158,7 +150,11 @@ impl<'a> Interface<'a> for UsbInterface {
         let array_obj = Object::try_from(&array).unwrap();
         let params: UsbControlTransferParameters = data.into();
 
-        let promise = Promise::resolve(&self.device.control_transfer_out_with_buffer_source(&params, array_obj));
+        let promise = Promise::resolve(
+            &self
+                .device
+                .control_transfer_out_with_buffer_source(&params, array_obj),
+        );
         let result = JsFuture::from(promise).await;
 
         match result {
@@ -191,7 +187,11 @@ impl<'a> Interface<'a> for UsbInterface {
         let array = Uint8Array::from(data);
         let array_obj = Object::try_from(&array).unwrap();
 
-        let promise = Promise::resolve(&self.device.transfer_out_with_buffer_source(endpoint, array_obj));
+        let promise = Promise::resolve(
+            &self
+                .device
+                .transfer_out_with_buffer_source(endpoint, array_obj),
+        );
 
         let result = JsFuture::from(promise).await;
 
@@ -211,7 +211,7 @@ impl From<ControlIn> for UsbControlTransferParameters {
             value.recipient.into(),
             value.request,
             value.control_type.into(),
-            value.value
+            value.value,
         )
     }
 }
@@ -223,7 +223,7 @@ impl From<ControlOut<'_>> for UsbControlTransferParameters {
             value.recipient.into(),
             value.request,
             value.control_type.into(),
-            value.value
+            value.value,
         )
     }
 }
