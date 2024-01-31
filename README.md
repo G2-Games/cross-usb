@@ -2,6 +2,9 @@
 
 An attempt at a USB library which works seamlessly across native and WASM targets.
 
+> [!NOTE]  
+> Web USB only works in Chromium based browsers for now.
+
 ## Dependencies
 
 For native USB, the crate utilizies [nusb](https://github.com/kevinmehall/nusb), a pure rust library similar to the very popular libusb.
