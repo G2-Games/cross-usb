@@ -113,6 +113,22 @@ impl Device for UsbDevice {
     async fn product_id(&self) -> u16 {
         self.device.product_id()
     }
+
+    async fn class(&self) -> u8 {
+        self.device.device_class()
+    }
+
+    async fn subclass(&self) -> u8 {
+        self.device.device_subclass()
+    }
+
+    async fn manufacturer_string(&self) -> Option<String> {
+        self.device.manufacturer_name()
+    }
+
+    async fn product_string(&self) -> Option<String> {
+        self.device.product_name()
+    }
 }
 
 impl<'a> Interface<'a> for UsbInterface {

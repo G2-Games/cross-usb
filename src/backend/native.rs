@@ -64,6 +64,22 @@ impl Device for UsbDevice {
     async fn product_id(&self) -> u16 {
         self.device_info.product_id()
     }
+
+    async fn class(&self) -> u8 {
+        self.device_info.class()
+    }
+
+    async fn subclass(&self) -> u8 {
+        self.device_info.subclass()
+    }
+
+    async fn manufacturer_string(&self) -> Option<String> {
+        self.device_info.manufacturer_string().map(str::to_string)
+    }
+
+    async fn product_string(&self) -> Option<String> {
+        self.device_info.product_string().map(str::to_string)
+    }
 }
 
 impl<'a> Interface<'a> for UsbInterface {
