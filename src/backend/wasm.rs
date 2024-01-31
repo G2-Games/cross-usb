@@ -5,8 +5,8 @@ use wasm_bindgen::prelude::*;
 use js_sys::{Array, Object, Promise, Uint8Array};
 use wasm_bindgen_futures::JsFuture;
 use web_sys::{
-    console, Usb, UsbControlTransferParameters, UsbDevice as WasmUsbDevice,
-    UsbDeviceRequestOptions, UsbInTransferResult, UsbInterface as WasmUsbInterface,
+    console, UsbControlTransferParameters, UsbDevice as WasmUsbDevice,
+    UsbDeviceRequestOptions, UsbInTransferResult,
     UsbOutTransferResult, UsbRecipient, UsbRequestType,
 };
 
