@@ -54,7 +54,7 @@ pub async fn get_device(vendor_id: u16, product_id: u16) -> Result<UsbDevice, Us
 
     let device = match device_info.open() {
         Ok(dev) => dev,
-        Err(_) => return Err(UsbError::CommunicationError)
+        Err(_) => return Err(UsbError::CommunicationError),
     };
 
     Ok(UsbDevice {
@@ -63,16 +63,15 @@ pub async fn get_device(vendor_id: u16, product_id: u16) -> Result<UsbDevice, Us
     })
 }
 
-pub async fn get_device_filter(
-    device_filter: Vec<DeviceFilter>,
-) -> Result<UsbDevice, UsbError> {
+pub async fn get_device_filter(device_filter: Vec<DeviceFilter>) -> Result<UsbDevice, UsbError> {
     let devices = nusb::list_devices().unwrap();
 
     let mut device_info = None;
     for prelim_dev_inf in devices {
         // See if the device exists in the list
-        if device_filter.iter().position(|info|
-            {
+        if device_filter
+            .iter()
+            .position(|info| {
                 let mut result = false;
 
                 if info.vendor_id.is_some() {
@@ -96,8 +95,9 @@ pub async fn get_device_filter(
                 }
 
                 result
-            }
-        ).is_some() {
+            })
+            .is_some()
+        {
             device_info = Some(prelim_dev_inf)
         }
     }
@@ -187,10 +187,11 @@ impl<'a> Interface<'a> for UsbInterface {
             .interface
             .bulk_in(endpoint, request_buffer)
             .await
-            .into_result() {
-                Ok(res) => Ok(res),
-                Err(_) => Err(UsbError::TransferError),
-            }
+            .into_result()
+        {
+            Ok(res) => Ok(res),
+            Err(_) => Err(UsbError::TransferError),
+        }
     }
 
     async fn bulk_out(&self, endpoint: u8, data: &[u8]) -> Result<usize, UsbError> {

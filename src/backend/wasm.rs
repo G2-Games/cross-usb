@@ -114,8 +114,9 @@ pub async fn get_device_filter(
     for js_device in device_list {
         let device: WasmUsbDevice = js_device.into();
 
-        if device_filter.iter().position(|info|
-            {
+        if device_filter
+            .iter()
+            .position(|info| {
                 let mut result = false;
 
                 if info.vendor_id.is_some() {
@@ -139,8 +140,9 @@ pub async fn get_device_filter(
                 }
 
                 result
-            }
-        ).is_some() {
+            })
+            .is_some()
+        {
             return Ok(UsbDevice { device });
         }
     }
@@ -292,9 +294,11 @@ impl<'a> Interface<'a> for UsbInterface {
             &self
                 .device
                 .control_transfer_out_with_buffer_source(&params, array_obj),
-        )).await {
+        ))
+        .await
+        {
             Ok(res) => res.into(),
-            Err(_) => return Err(UsbError::TransferError)
+            Err(_) => return Err(UsbError::TransferError),
         };
 
         Ok(result.bytes_written() as usize)

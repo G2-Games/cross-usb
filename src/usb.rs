@@ -79,7 +79,7 @@ pub enum UsbError {
     #[error("device transfer failed")]
     TransferError,
 
-     #[error("device communication failed")]
+    #[error("device communication failed")]
     CommunicationError,
 
     #[error("device disconnected")]
