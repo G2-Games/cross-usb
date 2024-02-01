@@ -22,31 +22,29 @@ pub struct UsbInterface {
 }
 
 #[wasm_bindgen]
-#[derive(PartialEq, Clone)]
+#[derive(PartialEq, Clone, Default)]
 pub struct DeviceFilter {
     pub vendor_id: Option<u16>,
     pub product_id: Option<u16>,
     pub class: Option<u8>,
     pub subclass: Option<u8>,
     pub protocol: Option<u8>,
-    serial_number: Option<String>,
 }
 
 impl DeviceFilter {
-    pub fn serial_number(&self) -> &Option<String> {
-        &self.serial_number
-    }
-}
-
-impl Default for DeviceFilter {
-    fn default() -> Self {
+    pub fn new(
+        vendor_id: Option<u16>,
+        product_id: Option<u16>,
+        class: Option<u8>,
+        subclass: Option<u8>,
+        protocol: Option<u8>,
+    ) -> Self {
         Self {
-            vendor_id: None,
-            product_id: None,
-            class: None,
-            subclass: None,
-            protocol: None,
-            serial_number: None,
+            vendor_id,
+            product_id,
+            class,
+            subclass,
+            protocol,
         }
     }
 }
@@ -140,10 +138,6 @@ pub async fn get_device_filter(
                     result = info.protocol.unwrap() == device.device_protocol();
                 }
 
-                if info.serial_number().is_some() && device.serial_number().is_some() {
-                    result = info.serial_number().as_ref().unwrap() == &device.serial_number().unwrap().to_owned();
-                }
-
                 result
             }
         ).is_some() {
@@ -191,14 +185,6 @@ pub async fn get_device_filter(
                 &js_filter,
                 &JsValue::from_str("protocolCode"),
                 &JsValue::from(pro),
-            )
-            .unwrap();
-        }
-        if let Some(serial) = filter.serial_number {
-            js_sys::Reflect::set(
-                &js_filter,
-                &JsValue::from_str("serialNumber"),
-                &JsValue::from(serial),
             )
             .unwrap();
         }

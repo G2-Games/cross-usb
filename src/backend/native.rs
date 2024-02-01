@@ -9,6 +9,33 @@ pub struct UsbInterface {
     interface: nusb::Interface,
 }
 
+#[derive(PartialEq, Clone, Default)]
+pub struct DeviceFilter {
+    pub vendor_id: Option<u16>,
+    pub product_id: Option<u16>,
+    pub class: Option<u8>,
+    pub subclass: Option<u8>,
+    pub protocol: Option<u8>,
+}
+
+impl DeviceFilter {
+    pub fn new(
+        vendor_id: Option<u16>,
+        product_id: Option<u16>,
+        class: Option<u8>,
+        subclass: Option<u8>,
+        protocol: Option<u8>,
+    ) -> Self {
+        Self {
+            vendor_id,
+            product_id,
+            class,
+            subclass,
+            protocol,
+        }
+    }
+}
+
 pub async fn get_device(vendor_id: u16, product_id: u16) -> Result<UsbDevice, UsbError> {
     let devices = nusb::list_devices().unwrap();
 
@@ -34,35 +61,6 @@ pub async fn get_device(vendor_id: u16, product_id: u16) -> Result<UsbDevice, Us
         device_info,
         device,
     })
-}
-
-#[derive(PartialEq, Clone)]
-pub struct DeviceFilter {
-    pub vendor_id: Option<u16>,
-    pub product_id: Option<u16>,
-    pub class: Option<u8>,
-    pub subclass: Option<u8>,
-    pub protocol: Option<u8>,
-    serial_number: Option<String>,
-}
-
-impl DeviceFilter {
-    pub fn serial_number(&self) -> &Option<String> {
-        &self.serial_number
-    }
-}
-
-impl Default for DeviceFilter {
-    fn default() -> Self {
-        Self {
-            vendor_id: None,
-            product_id: None,
-            class: None,
-            subclass: None,
-            protocol: None,
-            serial_number: None,
-        }
-    }
 }
 
 pub async fn get_device_filter(
@@ -95,10 +93,6 @@ pub async fn get_device_filter(
 
                 if info.protocol.is_some() {
                     result = info.protocol.unwrap() == prelim_dev_inf.protocol();
-                }
-
-                if info.serial_number().is_some() && prelim_dev_inf.serial_number().is_some() {
-                    result = info.serial_number().as_ref().unwrap() == &prelim_dev_inf.serial_number().unwrap().to_owned();
                 }
 
                 result

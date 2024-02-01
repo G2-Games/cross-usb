@@ -48,8 +48,8 @@ pub use crate::context::UsbDevice;
 /// An implementation of a USB interface
 pub use crate::context::UsbInterface;
 
-/// A single Device ID and Product ID pair to find when looking
-/// for new USB devices using [get_device_filter]
+/// Information about a USB device for finding it while trying
+/// to look for new USB devices using [get_device_filter]
 #[doc(inline)]
 pub use crate::context::DeviceFilter;
 
@@ -62,11 +62,12 @@ pub use crate::context::get_device;
 /// ## Example
 /// ```no_run
 /// # tokio_test::block_on(async {
-/// use cross_usb::{get_device_filter, FilterTuple};
+/// use cross_usb::{get_device_filter, DeviceFilter, device_filter};
+///
 ///
 /// let filter = vec![
-///     FilterTuple(0x054c, 0x00c9),
-///     FilterTuple(0x054c, 0x0186),
+///     device_filter!{vendor_id: 0x054c, product_id: 0x00c9},
+///     device_filter!{vendor_id: 0x054c},
 /// ];
 ///
 /// let device = get_device_filter(filter).await.expect("Could not find device in list");
@@ -74,3 +75,32 @@ pub use crate::context::get_device;
 /// ```
 #[doc(inline)]
 pub use crate::context::get_device_filter;
+
+/// Macro to create a device filter easily from data.
+///
+/// The only valid keys are fields of the [DeviceFilter] struct.
+/// You may use as many or as few of them as you need, the rest
+/// of the values will be filled with [None].
+///
+/// ## Usage
+/// ```
+/// use cross_usb::device_filter;
+///
+/// // Example with all fields filled
+/// device_filter!{
+///     vendor_id: 0x054c,
+///     product_id: 0x0186,
+///     class: 0xFF,
+///     subclass: 0x02,
+///     protocol: 0x15,
+/// };
+/// ```
+#[macro_export]
+macro_rules! device_filter {
+    ($($field:ident: $val:expr),+ $(,)?) => {
+        cross_usb::DeviceFilter {
+            $($field: Some($val),)*
+            ..cross_usb::DeviceFilter::default()
+        }
+    }
+}
