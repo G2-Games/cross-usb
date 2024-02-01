@@ -51,7 +51,7 @@ pub use crate::context::UsbInterface;
 /// A single Device ID and Product ID pair to find when looking
 /// for new USB devices using [get_device_filter]
 #[doc(inline)]
-pub use crate::context::FilterTuple;
+pub use crate::context::DeviceFilter;
 
 /// Gets a single device from the VendorID and ProductID
 #[doc(inline)]

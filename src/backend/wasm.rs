@@ -1,16 +1,15 @@
 #![cfg_attr(debug_assertions, allow(dead_code, unused_imports))]
-use std::error::Error;
 use wasm_bindgen::prelude::*;
 
 use js_sys::{Array, Object, Promise, Uint8Array};
 use wasm_bindgen_futures::JsFuture;
 use web_sys::{
-    console, UsbControlTransferParameters, UsbDevice as WasmUsbDevice, UsbDeviceRequestOptions,
+    UsbControlTransferParameters, UsbDevice as WasmUsbDevice, UsbDeviceRequestOptions,
     UsbInTransferResult, UsbOutTransferResult, UsbRecipient, UsbRequestType,
 };
 
 // Crate stuff
-use crate::usb::{ControlIn, ControlOut, ControlType, Device, Interface, Recipient};
+use crate::usb::{ControlIn, ControlOut, ControlType, Device, Interface, Recipient, UsbError};
 
 #[wasm_bindgen]
 pub struct UsbDevice {
@@ -20,6 +19,36 @@ pub struct UsbDevice {
 #[wasm_bindgen]
 pub struct UsbInterface {
     device: WasmUsbDevice,
+}
+
+#[wasm_bindgen]
+#[derive(PartialEq, Clone)]
+pub struct DeviceFilter {
+    pub vendor_id: Option<u16>,
+    pub product_id: Option<u16>,
+    pub class: Option<u8>,
+    pub subclass: Option<u8>,
+    pub protocol: Option<u8>,
+    serial_number: Option<String>,
+}
+
+impl DeviceFilter {
+    pub fn serial_number(&self) -> &Option<String> {
+        &self.serial_number
+    }
+}
+
+impl Default for DeviceFilter {
+    fn default() -> Self {
+        Self {
+            vendor_id: None,
+            product_id: None,
+            class: None,
+            subclass: None,
+            protocol: None,
+            serial_number: None,
+        }
+    }
 }
 
 #[wasm_bindgen]
@@ -72,12 +101,8 @@ pub async fn get_device(vendor_id: u16, product_id: u16) -> Result<UsbDevice, js
 }
 
 #[wasm_bindgen]
-#[derive(PartialEq, Eq, Clone)]
-pub struct FilterTuple(pub u16, pub u16);
-
-#[wasm_bindgen]
 pub async fn get_device_filter(
-    device_filter: Vec<FilterTuple>,
+    device_filter: Vec<DeviceFilter>,
 ) -> Result<UsbDevice, js_sys::Error> {
     let window = web_sys::window().unwrap();
 
@@ -91,31 +116,93 @@ pub async fn get_device_filter(
     for js_device in device_list {
         let device: WasmUsbDevice = js_device.into();
 
-        for filter_info in &device_filter {
-            if device.vendor_id() == filter_info.0 && device.product_id() == filter_info.1 {
-                let _open_promise = JsFuture::from(Promise::resolve(&device.open())).await?;
+        if device_filter.iter().position(|info|
+            {
+                let mut result = false;
 
-                return Ok(UsbDevice { device });
+                if info.vendor_id.is_some() {
+                    result = info.vendor_id.unwrap() == device.vendor_id();
+                }
+
+                if info.product_id.is_some() {
+                    result = info.product_id.unwrap() == device.product_id();
+                }
+
+                if info.class.is_some() {
+                    result = info.class.unwrap() == device.device_class();
+                }
+
+                if info.subclass.is_some() {
+                    result = info.subclass.unwrap() == device.device_subclass();
+                }
+
+                if info.protocol.is_some() {
+                    result = info.protocol.unwrap() == device.device_protocol();
+                }
+
+                if info.serial_number().is_some() && device.serial_number().is_some() {
+                    result = info.serial_number().as_ref().unwrap() == &device.serial_number().unwrap().to_owned();
+                }
+
+                result
             }
+        ).is_some() {
+            return Ok(UsbDevice { device });
         }
     }
 
     let arr = Array::new();
-    for device in device_filter {
-        let filter1 = js_sys::Object::new();
-        js_sys::Reflect::set(
-            &filter1,
-            &JsValue::from_str("vendorId"),
-            &JsValue::from(device.0),
-        )
-        .unwrap();
-        js_sys::Reflect::set(
-            &filter1,
-            &JsValue::from_str("productId"),
-            &JsValue::from(device.1),
-        )
-        .unwrap();
-        arr.push(&filter1);
+    for filter in device_filter {
+        let js_filter = js_sys::Object::new();
+        if let Some(vid) = filter.vendor_id {
+            js_sys::Reflect::set(
+                &js_filter,
+                &JsValue::from_str("vendorId"),
+                &JsValue::from(vid),
+            )
+            .unwrap();
+        }
+        if let Some(pid) = filter.product_id {
+            js_sys::Reflect::set(
+                &js_filter,
+                &JsValue::from_str("productId"),
+                &JsValue::from(pid),
+            )
+            .unwrap();
+        }
+        if let Some(class) = filter.class {
+            js_sys::Reflect::set(
+                &js_filter,
+                &JsValue::from_str("classCode"),
+                &JsValue::from(class),
+            )
+            .unwrap();
+        }
+        if let Some(subclass) = filter.subclass {
+            js_sys::Reflect::set(
+                &js_filter,
+                &JsValue::from_str("subclassCode"),
+                &JsValue::from(subclass),
+            )
+            .unwrap();
+        }
+        if let Some(pro) = filter.protocol {
+            js_sys::Reflect::set(
+                &js_filter,
+                &JsValue::from_str("protocolCode"),
+                &JsValue::from(pro),
+            )
+            .unwrap();
+        }
+        if let Some(serial) = filter.serial_number {
+            js_sys::Reflect::set(
+                &js_filter,
+                &JsValue::from_str("serialNumber"),
+                &JsValue::from(serial),
+            )
+            .unwrap();
+        }
+        arr.push(&js_filter);
     }
 
     let filters = JsValue::from(&arr);
@@ -134,16 +221,15 @@ impl Device for UsbDevice {
     type UsbDevice = UsbDevice;
     type UsbInterface = UsbInterface;
 
-    async fn open_interface(&self, number: u8) -> Result<UsbInterface, Box<dyn Error>> {
+    async fn open_interface(&self, number: u8) -> Result<UsbInterface, UsbError> {
         let dev_promise =
             JsFuture::from(Promise::resolve(&self.device.claim_interface(number))).await;
 
         // Wait for the interface to be claimed
         let _device: WasmUsbDevice = match dev_promise {
             Ok(dev) => dev.into(),
-            Err(err) => {
-                console::log_1(&err.clone());
-                return Err(format!("{:?}", err).into());
+            Err(_) => {
+                return Err(UsbError::CommunicationError);
             }
         };
 
@@ -152,14 +238,14 @@ impl Device for UsbDevice {
         })
     }
 
-    async fn reset(&self) -> Result<(), Box<dyn Error>> {
+    async fn reset(&self) -> Result<(), UsbError> {
         let promise = Promise::resolve(&self.device.reset());
 
         let result = JsFuture::from(promise).await;
 
         match result {
             Ok(_) => Ok(()),
-            Err(_) => Err("cancelled".into()),
+            Err(_) => Err(UsbError::CommunicationError),
         }
     }
 
@@ -189,7 +275,7 @@ impl Device for UsbDevice {
 }
 
 impl<'a> Interface<'a> for UsbInterface {
-    async fn control_in(&self, data: crate::usb::ControlIn) -> Result<Vec<u8>, Box<dyn Error>> {
+    async fn control_in(&self, data: crate::usb::ControlIn) -> Result<Vec<u8>, UsbError> {
         let length = data.length;
         let params: UsbControlTransferParameters = data.into();
 
@@ -198,12 +284,12 @@ impl<'a> Interface<'a> for UsbInterface {
 
         let transfer_result: UsbInTransferResult = match result {
             Ok(res) => res.into(),
-            Err(err) => return Err(format!("Error {:?}", err).into()),
+            Err(_) => return Err(UsbError::TransferError),
         };
 
         let data = match transfer_result.data() {
             Some(res) => res.buffer(),
-            None => return Err("No data returned".into()),
+            None => return Err(UsbError::TransferError),
         };
 
         let array = Uint8Array::new(&data);
@@ -211,37 +297,36 @@ impl<'a> Interface<'a> for UsbInterface {
         Ok(array.to_vec())
     }
 
-    async fn control_out(&self, data: crate::usb::ControlOut<'a>) -> Result<(), Box<dyn Error>> {
+    async fn control_out(&self, data: crate::usb::ControlOut<'a>) -> Result<usize, UsbError> {
         let array = Uint8Array::from(data.data);
         let array_obj = Object::try_from(&array).unwrap();
         let params: UsbControlTransferParameters = data.into();
 
-        let promise = Promise::resolve(
+        let result: UsbOutTransferResult = match JsFuture::from(Promise::resolve(
             &self
                 .device
                 .control_transfer_out_with_buffer_source(&params, array_obj),
-        );
-        let result = JsFuture::from(promise).await;
+        )).await {
+            Ok(res) => res.into(),
+            Err(_) => return Err(UsbError::TransferError)
+        };
 
-        match result {
-            Ok(_) => Ok(()),
-            Err(err) => Err(format!("{:?}", err).into()),
-        }
+        Ok(result.bytes_written() as usize)
     }
 
-    async fn bulk_in(&self, endpoint: u8, length: usize) -> Result<Vec<u8>, Box<dyn Error>> {
+    async fn bulk_in(&self, endpoint: u8, length: usize) -> Result<Vec<u8>, UsbError> {
         let promise = Promise::resolve(&self.device.transfer_in(endpoint, length as u32));
 
         let result = JsFuture::from(promise).await;
 
         let transfer_result: UsbInTransferResult = match result {
             Ok(res) => res.into(),
-            Err(err) => return Err(format!("Error {:?}", err).into()),
+            Err(_) => return Err(UsbError::TransferError),
         };
 
         let data = match transfer_result.data() {
             Some(res) => res.buffer(),
-            None => return Err("No data returned".into()),
+            None => return Err(UsbError::TransferError),
         };
 
         let array = Uint8Array::new(&data);
@@ -249,7 +334,7 @@ impl<'a> Interface<'a> for UsbInterface {
         Ok(array.to_vec())
     }
 
-    async fn bulk_out(&self, endpoint: u8, data: &[u8]) -> Result<usize, Box<dyn Error>> {
+    async fn bulk_out(&self, endpoint: u8, data: &[u8]) -> Result<usize, UsbError> {
         let array = Uint8Array::from(data);
         let array_obj = Object::try_from(&array).unwrap();
 
@@ -263,7 +348,7 @@ impl<'a> Interface<'a> for UsbInterface {
 
         let transfer_result: UsbOutTransferResult = match result {
             Ok(res) => res.into(),
-            Err(err) => return Err(format!("Error {:?}", err).into()),
+            Err(_) => return Err(UsbError::TransferError),
         };
 
         Ok(transfer_result.bytes_written() as usize)

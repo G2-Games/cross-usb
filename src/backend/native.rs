@@ -1,6 +1,4 @@
-use std::error::Error;
-
-use crate::usb::{ControlIn, ControlOut, ControlType, Device, Interface, Recipient};
+use crate::usb::{ControlIn, ControlOut, ControlType, Device, Interface, Recipient, UsbError};
 
 pub struct UsbDevice {
     device_info: nusb::DeviceInfo,
@@ -11,7 +9,7 @@ pub struct UsbInterface {
     interface: nusb::Interface,
 }
 
-pub async fn get_device(vendor_id: u16, product_id: u16) -> Result<UsbDevice, Box<dyn Error>> {
+pub async fn get_device(vendor_id: u16, product_id: u16) -> Result<UsbDevice, UsbError> {
     let devices = nusb::list_devices().unwrap();
 
     let mut device_info = None;
@@ -24,10 +22,13 @@ pub async fn get_device(vendor_id: u16, product_id: u16) -> Result<UsbDevice, Bo
 
     let device_info = match device_info {
         Some(dev) => dev,
-        None => return Err("Device not found".into()),
+        None => return Err(UsbError::DeviceNotFound),
     };
 
-    let device = device_info.open()?;
+    let device = match device_info.open() {
+        Ok(dev) => dev,
+        Err(_) => return Err(UsbError::CommunicationError)
+    };
 
     Ok(UsbDevice {
         device_info,
@@ -35,38 +36,87 @@ pub async fn get_device(vendor_id: u16, product_id: u16) -> Result<UsbDevice, Bo
     })
 }
 
-#[derive(PartialEq, Eq, Clone)]
-pub struct FilterTuple(pub u16, pub u16);
+#[derive(PartialEq, Clone)]
+pub struct DeviceFilter {
+    pub vendor_id: Option<u16>,
+    pub product_id: Option<u16>,
+    pub class: Option<u8>,
+    pub subclass: Option<u8>,
+    pub protocol: Option<u8>,
+    serial_number: Option<String>,
+}
+
+impl DeviceFilter {
+    pub fn serial_number(&self) -> &Option<String> {
+        &self.serial_number
+    }
+}
+
+impl Default for DeviceFilter {
+    fn default() -> Self {
+        Self {
+            vendor_id: None,
+            product_id: None,
+            class: None,
+            subclass: None,
+            protocol: None,
+            serial_number: None,
+        }
+    }
+}
 
 pub async fn get_device_filter(
-    device_filter: Vec<FilterTuple>,
-) -> Result<UsbDevice, Box<dyn Error>> {
+    device_filter: Vec<DeviceFilter>,
+) -> Result<UsbDevice, UsbError> {
     let devices = nusb::list_devices().unwrap();
 
     let mut device_info = None;
-    for device in devices {
-        match device_filter
-            .iter()
-            .position(|i| i == &FilterTuple(device.vendor_id(), device.product_id()))
-        {
-            Some(_) => {
-                device_info = Some(device);
-                break;
-            }
-            None => device_info = None,
-        }
-    }
+    for prelim_dev_inf in devices {
+        // See if the device exists in the list
+        if device_filter.iter().position(|info|
+            {
+                let mut result = false;
 
-    if device_info.is_none() {
-        return Err("No devices from the list found".into());
+                if info.vendor_id.is_some() {
+                    result = info.vendor_id.unwrap() == prelim_dev_inf.vendor_id();
+                }
+
+                if info.product_id.is_some() {
+                    result = info.product_id.unwrap() == prelim_dev_inf.product_id();
+                }
+
+                if info.class.is_some() {
+                    result = info.class.unwrap() == prelim_dev_inf.class();
+                }
+
+                if info.subclass.is_some() {
+                    result = info.subclass.unwrap() == prelim_dev_inf.subclass();
+                }
+
+                if info.protocol.is_some() {
+                    result = info.protocol.unwrap() == prelim_dev_inf.protocol();
+                }
+
+                if info.serial_number().is_some() && prelim_dev_inf.serial_number().is_some() {
+                    result = info.serial_number().as_ref().unwrap() == &prelim_dev_inf.serial_number().unwrap().to_owned();
+                }
+
+                result
+            }
+        ).is_some() {
+            device_info = Some(prelim_dev_inf)
+        }
     }
 
     let device_info = match device_info {
         Some(dev) => dev,
-        None => return Err("Device not found".into()),
+        None => return Err(UsbError::DeviceNotFound),
     };
 
-    let device = device_info.open()?;
+    let device = match device_info.open() {
+        Ok(dev) => dev,
+        Err(_) => return Err(UsbError::CommunicationError),
+    };
 
     Ok(UsbDevice {
         device_info,
@@ -78,19 +128,19 @@ impl Device for UsbDevice {
     type UsbDevice = UsbDevice;
     type UsbInterface = UsbInterface;
 
-    async fn open_interface(&self, number: u8) -> Result<UsbInterface, Box<dyn Error>> {
+    async fn open_interface(&self, number: u8) -> Result<UsbInterface, UsbError> {
         let interface = match self.device.claim_interface(number) {
             Ok(inter) => inter,
-            Err(e) => return Err(e.into()),
+            Err(_) => return Err(UsbError::CommunicationError),
         };
 
         Ok(UsbInterface { interface })
     }
 
-    async fn reset(&self) -> Result<(), Box<dyn Error>> {
+    async fn reset(&self) -> Result<(), UsbError> {
         match self.device.reset() {
             Ok(_) => Ok(()),
-            Err(e) => Err(e.into()),
+            Err(_) => Err(UsbError::CommunicationError),
         }
     }
 
@@ -120,28 +170,36 @@ impl Device for UsbDevice {
 }
 
 impl<'a> Interface<'a> for UsbInterface {
-    async fn control_in(&self, data: ControlIn) -> Result<Vec<u8>, Box<dyn Error>> {
-        Ok(self.interface.control_in(data.into()).await.into_result()?)
+    async fn control_in(&self, data: ControlIn) -> Result<Vec<u8>, UsbError> {
+        let result = match self.interface.control_in(data.into()).await.into_result() {
+            Ok(res) => res,
+            Err(_) => return Err(UsbError::TransferError),
+        };
+
+        Ok(result)
     }
 
-    async fn control_out(&self, data: ControlOut<'a>) -> Result<(), Box<dyn Error>> {
+    async fn control_out(&self, data: ControlOut<'a>) -> Result<usize, UsbError> {
         match self.interface.control_out(data.into()).await.into_result() {
-            Ok(_) => Ok(()),
-            Err(e) => Err(e.into()),
+            Ok(bytes) => Ok(bytes.actual_length()),
+            Err(_) => Err(UsbError::TransferError),
         }
     }
 
-    async fn bulk_in(&self, endpoint: u8, length: usize) -> Result<Vec<u8>, Box<dyn Error>> {
+    async fn bulk_in(&self, endpoint: u8, length: usize) -> Result<Vec<u8>, UsbError> {
         let request_buffer = nusb::transfer::RequestBuffer::new(length);
 
-        Ok(self
+        match self
             .interface
             .bulk_in(endpoint, request_buffer)
             .await
-            .into_result()?)
+            .into_result() {
+                Ok(res) => Ok(res),
+                Err(_) => Err(UsbError::TransferError),
+            }
     }
 
-    async fn bulk_out(&self, endpoint: u8, data: &[u8]) -> Result<usize, Box<dyn Error>> {
+    async fn bulk_out(&self, endpoint: u8, data: &[u8]) -> Result<usize, UsbError> {
         match self
             .interface
             .bulk_out(endpoint, data.to_vec())
@@ -149,7 +207,7 @@ impl<'a> Interface<'a> for UsbInterface {
             .into_result()
         {
             Ok(len) => Ok(len.actual_length()),
-            Err(e) => Err(e.into()),
+            Err(_) => Err(UsbError::TransferError),
         }
     }
 }

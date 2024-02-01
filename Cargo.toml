@@ -52,6 +52,9 @@ tokio-test = "0.4.3"
 [profile.release]
 opt-level = "s"
 
+[dependencies]
+thiserror = "1.0.56"
+
 [package.metadata.wasm-pack.profile.dev.wasm-bindgen]
 dwarf-debug-info = true
 
