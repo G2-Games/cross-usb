@@ -5,17 +5,18 @@
 //!
 //! ## Example:
 //! ```no_run
-//! use cross_usb::usb::{Device, Recipient, ControlType, ControlIn};
+//! # tokio_test::block_on(async {
+//! use cross_usb::usb::{Device, Interface, Recipient, ControlType, ControlIn};
 //!
 //! // Obtain a device using its VendorID and ProductID
-//! let device = cross_usb::get_device(0x054c, 0x0186).await.expect("");
+//! let device = cross_usb::get_device(0x054c, 0x0186).await.expect("Failed to get device");
 //!
 //! // Obtain an interface of the device
-//! let interface = usb_device.open_interface(0).await.expect("Failed to open interface");
+//! let interface = device.open_interface(0).await.expect("Failed to open interface");
 //!
 //! // Send a Control transfer to the device, obtaining
 //! // the result and storing it in `result`, and you're done!
-//! let result = match interface.control_in(ControlIn {
+//! let result = interface.control_in(ControlIn {
 //!         control_type: ControlType::Vendor,
 //!         recipient: Recipient::Interface,
 //!         request: 0x01,
@@ -25,6 +26,7 @@
 //!     })
 //!     .await
 //!     .expect("Sending control transfer failed");
+//! # })
 //! ```
 pub mod usb;
 
@@ -46,6 +48,29 @@ pub use crate::context::UsbDevice;
 /// An implementation of a USB interface
 pub use crate::context::UsbInterface;
 
+/// A single Device ID and Product ID pair to find when looking
+/// for new USB devices using [get_device_filter]
+#[doc(inline)]
+pub use crate::context::FilterTuple;
+
 /// Gets a single device from the VendorID and ProductID
 #[doc(inline)]
 pub use crate::context::get_device;
+
+/// Gets a single device from a list of VendorID and ProductIDs
+///
+/// ## Example
+/// ```no_run
+/// # tokio_test::block_on(async {
+/// use cross_usb::{get_device_filter, FilterTuple};
+///
+/// let filter = vec![
+///     FilterTuple(0x054c, 0x00c9),
+///     FilterTuple(0x054c, 0x0186),
+/// ];
+///
+/// let device = get_device_filter(filter).await.expect("Could not find device in list");
+/// # })
+/// ```
+#[doc(inline)]
+pub use crate::context::get_device_filter;

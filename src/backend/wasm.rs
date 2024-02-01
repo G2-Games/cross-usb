@@ -29,6 +29,20 @@ pub async fn get_device(vendor_id: u16, product_id: u16) -> Result<UsbDevice, js
     let navigator = window.navigator();
     let usb = navigator.usb();
 
+    let device_list: Array = JsFuture::from(Promise::resolve(&usb.get_devices())).await?.into();
+    // Check if the device is already paired, if so, we don't need to request it again
+    for js_device in device_list {
+        let device: WasmUsbDevice = js_device.into();
+
+        if device.vendor_id() == vendor_id && device.product_id() == product_id {
+            let _open_promise = JsFuture::from(Promise::resolve(&device.open())).await?;
+
+            return Ok(UsbDevice {
+                device
+            })
+        }
+    }
+
     let arr = Array::new();
     let filter1 = js_sys::Object::new();
     js_sys::Reflect::set(
@@ -48,15 +62,62 @@ pub async fn get_device(vendor_id: u16, product_id: u16) -> Result<UsbDevice, js
 
     let filters2 = UsbDeviceRequestOptions::new(&filters);
 
-    let device_promise = JsFuture::from(Promise::resolve(&usb.request_device(&filters2))).await;
+    let device: WasmUsbDevice = JsFuture::from(Promise::resolve(&usb.request_device(&filters2))).await?.into();
 
-    let device: WasmUsbDevice = match device_promise {
-        Ok(dev) => dev.into(),
-        Err(err) => {
-            console::log_1(&err.clone());
-            return Err(err.into());
+    let _open_promise = JsFuture::from(Promise::resolve(&device.open())).await?;
+
+    Ok(UsbDevice { device })
+}
+
+#[wasm_bindgen]
+#[derive(PartialEq, Eq, Clone)]
+pub struct FilterTuple(pub u16, pub u16);
+
+#[wasm_bindgen]
+pub async fn get_device_filter(device_filter: Vec<FilterTuple>) -> Result<UsbDevice, js_sys::Error> {
+    let window = web_sys::window().unwrap();
+
+    let navigator = window.navigator();
+    let usb = navigator.usb();
+
+    let device_list: Array = JsFuture::from(Promise::resolve(&usb.get_devices())).await?.into();
+    // Check if the device is already paired, if so, we don't need to request it again
+    for js_device in device_list {
+        let device: WasmUsbDevice = js_device.into();
+
+        for filter_info in &device_filter {
+            if device.vendor_id() == filter_info.0 && device.product_id() == filter_info.1 {
+                let _open_promise = JsFuture::from(Promise::resolve(&device.open())).await?;
+
+                return Ok(UsbDevice {
+                    device
+                })
+            }
         }
-    };
+    }
+
+    let arr = Array::new();
+    for device in device_filter {
+        let filter1 = js_sys::Object::new();
+        js_sys::Reflect::set(
+            &filter1,
+            &JsValue::from_str("vendorId"),
+            &JsValue::from(device.0),
+        )
+        .unwrap();
+        js_sys::Reflect::set(
+            &filter1,
+            &JsValue::from_str("productId"),
+            &JsValue::from(device.1),
+        )
+        .unwrap();
+        arr.push(&filter1);
+    }
+
+    let filters = JsValue::from(&arr);
+    let filters2 = UsbDeviceRequestOptions::new(&filters);
+
+    let device: WasmUsbDevice = JsFuture::from(Promise::resolve(&usb.request_device(&filters2))).await?.into();
 
     let _open_promise = JsFuture::from(Promise::resolve(&device.open())).await?;
 

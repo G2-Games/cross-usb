@@ -35,6 +35,40 @@ pub async fn get_device(vendor_id: u16, product_id: u16) -> Result<UsbDevice, Bo
     })
 }
 
+#[derive(PartialEq, Eq, Clone)]
+pub struct FilterTuple(pub u16, pub u16);
+
+pub async fn get_device_filter(device_filter: Vec<FilterTuple>) -> Result<UsbDevice, Box<dyn Error>> {
+    let devices = nusb::list_devices().unwrap();
+
+    let mut device_info = None;
+    for device in devices {
+        match device_filter.iter().position(|i| i == &FilterTuple(device.vendor_id(), device.product_id())) {
+            Some(_) => {
+                device_info = Some(device);
+                break;
+            },
+            None => device_info = None,
+        }
+    }
+
+    if device_info.is_none() {
+        return Err("No devices from the list found".into())
+    }
+
+    let device_info = match device_info {
+        Some(dev) => dev,
+        None => return Err("Device not found".into()),
+    };
+
+    let device = device_info.open()?;
+
+    Ok(UsbDevice {
+        device_info,
+        device,
+    })
+}
+
 impl Device for UsbDevice {
     type UsbDevice = UsbDevice;
     type UsbInterface = UsbInterface;

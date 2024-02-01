@@ -47,7 +47,7 @@ features = [
 nusb = "0.1.5"
 
 [dev-dependencies]
-futures-lite = "1.13.0"
+tokio-test = "0.4.3"
 
 [profile.release]
 opt-level = "s"
