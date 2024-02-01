@@ -2,6 +2,12 @@
 
 An attempt at a USB library which works seamlessly across native and WASM targets.
 
+[Crates.io](https://crates.io/crates/cross_usb)
+
+[Documentation](https://docs.rs/cross_usb/)
+
+------------------
+
 > [!NOTE]  
 > Web USB only works in Chromium based browsers for now.
 
