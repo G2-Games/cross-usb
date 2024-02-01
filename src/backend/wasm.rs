@@ -116,7 +116,7 @@ pub async fn get_device_filter(
 
         if device_filter
             .iter()
-            .position(|info| {
+            .any(|info| {
                 let mut result = false;
 
                 if info.vendor_id.is_some() {
@@ -141,7 +141,6 @@ pub async fn get_device_filter(
 
                 result
             })
-            .is_some()
         {
             return Ok(UsbDevice { device });
         }

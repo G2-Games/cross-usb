@@ -71,7 +71,7 @@ pub async fn get_device_filter(device_filter: Vec<DeviceFilter>) -> Result<UsbDe
         // See if the device exists in the list
         if device_filter
             .iter()
-            .position(|info| {
+            .any(|info| {
                 let mut result = false;
 
                 if info.vendor_id.is_some() {
@@ -96,7 +96,6 @@ pub async fn get_device_filter(device_filter: Vec<DeviceFilter>) -> Result<UsbDe
 
                 result
             })
-            .is_some()
         {
             device_info = Some(prelim_dev_inf)
         }
