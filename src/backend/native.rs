@@ -36,34 +36,7 @@ impl DeviceFilter {
     }
 }
 
-pub async fn get_device(vendor_id: u16, product_id: u16) -> Result<UsbDevice, UsbError> {
-    let devices = nusb::list_devices().unwrap();
-
-    let mut device_info = None;
-    for device in devices {
-        if device.vendor_id() == vendor_id && device.product_id() == product_id {
-            device_info = Some(device);
-            break;
-        }
-    }
-
-    let device_info = match device_info {
-        Some(dev) => dev,
-        None => return Err(UsbError::DeviceNotFound),
-    };
-
-    let device = match device_info.open() {
-        Ok(dev) => dev,
-        Err(_) => return Err(UsbError::CommunicationError),
-    };
-
-    Ok(UsbDevice {
-        device_info,
-        device,
-    })
-}
-
-pub async fn get_device_filter(device_filter: Vec<DeviceFilter>) -> Result<UsbDevice, UsbError> {
+pub async fn get_device(device_filter: Vec<DeviceFilter>) -> Result<UsbDevice, UsbError> {
     let devices = nusb::list_devices().unwrap();
 
     let mut device_info = None;

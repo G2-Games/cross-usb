@@ -3,13 +3,24 @@
 //! The idea is the user only has to write one way to access USB devices, which can be compiled
 //! to both WASM and native targets without any conditional compilation or configuration.
 //!
+//! For native device support, this library uses [nusb](https://docs.rs/nusb/latest/nusb/), a cross platform USB library written in Rust
+//! and comparable to the very popular `libusb` C library. Web Assembly support is provided by [web-sys](https://docs.rs/web-sys/latest/web_sys/)
+//! with the [Web USB API](https://developer.mozilla.org/en-US/docs/Web/API/WebUSB_API)
+//!
+//! When a [UsbInterface] is dropped, it is automatically released.
+//!
 //! ## Example:
 //! ```no_run
 //! # tokio_test::block_on(async {
 //! use cross_usb::usb::{Device, Interface, Recipient, ControlType, ControlIn};
+//! use cross_usb::device_filter;
 //!
 //! // Obtain a device using its VendorID and ProductID
-//! let device = cross_usb::get_device(0x054c, 0x0186).await.expect("Failed to get device");
+//! let filter = vec![
+//!     device_filter!{vendor_id: 0x054c, product_id: 0x00c9}
+//! ];
+//!
+//! let device = cross_usb::get_device_filter(filter).await.expect("Failed to get device");
 //!
 //! // Obtain an interface of the device
 //! let interface = device.open_interface(0).await.expect("Failed to open interface");

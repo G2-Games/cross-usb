@@ -29,7 +29,6 @@ version = "0.3"
 features = [
     "Window",
     "Navigator",
-    "console",
     "Usb",
     "UsbDevice",
     "UsbInterface",
@@ -39,7 +38,6 @@ features = [
     "UsbDeviceRequestOptions",
     "UsbInTransferResult",
     "UsbOutTransferResult",
-    "Storage"
 ]
 
 # Non-wasm deps

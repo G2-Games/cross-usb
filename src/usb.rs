@@ -16,8 +16,17 @@ pub trait Device {
     /// Open a specific interface of the device
     async fn open_interface(&self, number: u8) -> Result<UsbInterface, UsbError>;
 
-    /// Reset the device, which causes it to no longer be usable
+    /// Reset the device, which causes it to no longer be usable. You must
+    /// request a new device with [crate::get_device] or [crate::get_device_filter]
     async fn reset(&self) -> Result<(), UsbError>;
+
+    /*
+    /// Remove the device from the paired devices list, causing it to no longer be usable.
+    /// You must request to reconnect using [crate::get_device] or [crate::get_device_filter]
+    ///
+    /// **Note: Only does anything on WASM, on Native it simply resets the device**
+    async fn forget(&self) -> Result<(), UsbError>;
+    */
 
     /// 16 bit device Product ID
     async fn product_id(&self) -> u16;
