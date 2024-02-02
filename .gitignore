@@ -6,3 +6,6 @@ pkg/
 wasm-pack.log
 
 www
+
+.travis
+.appveyor

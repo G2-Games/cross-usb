@@ -20,7 +20,7 @@
 //!     device_filter!{vendor_id: 0x054c, product_id: 0x00c9}
 //! ];
 //!
-//! let device = cross_usb::get_device_filter(filter).await.expect("Failed to get device");
+//! let device = cross_usb::get_device(filter).await.expect("Failed to get device");
 //!
 //! // Obtain an interface of the device
 //! let interface = device.open_interface(0).await.expect("Failed to open interface");
@@ -64,16 +64,12 @@ pub use crate::context::UsbInterface;
 #[doc(inline)]
 pub use crate::context::DeviceFilter;
 
-/// Gets a single device from the VendorID and ProductID
-#[doc(inline)]
-pub use crate::context::get_device;
-
 /// Gets a single device from a list of VendorID and ProductIDs
 ///
 /// ## Example
 /// ```no_run
 /// # tokio_test::block_on(async {
-/// use cross_usb::{get_device_filter, DeviceFilter, device_filter};
+/// use cross_usb::{get_device, DeviceFilter, device_filter};
 ///
 ///
 /// let filter = vec![
@@ -81,11 +77,11 @@ pub use crate::context::get_device;
 ///     device_filter!{vendor_id: 0x054c},
 /// ];
 ///
-/// let device = get_device_filter(filter).await.expect("Could not find device in list");
+/// let device = get_device(filter).await.expect("Could not find device in list");
 /// # })
 /// ```
 #[doc(inline)]
-pub use crate::context::get_device_filter;
+pub use crate::context::get_device;
 
 /// Macro to create a device filter easily from data.
 ///
