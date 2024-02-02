@@ -1,6 +1,6 @@
 # Cross USB
 
-An attempt at a USB library which works seamlessly across native and WASM targets.
+A USB library which works seamlessly across most native and WASM targets.
 
 [Crates.io](https://crates.io/crates/cross_usb)
 
