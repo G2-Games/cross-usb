@@ -110,6 +110,10 @@ impl Device for UsbDevice {
         }
     }
 
+    async fn forget(&self) -> Result<(), UsbError> {
+        self.reset().await
+    }
+
     async fn vendor_id(&self) -> u16 {
         self.device_info.vendor_id()
     }
@@ -177,6 +181,25 @@ impl<'a> Interface<'a> for UsbInterface {
             Err(_) => Err(UsbError::TransferError),
         }
     }
+
+    /*
+    async fn interrupt_in(&self, endpoint: u8, length: usize) -> Result<Vec<u8>, UsbError> {
+        let buf = Vec::new();
+        let buffer = nusb::transfer::RequestBuffer::reuse(buf, length);
+
+        match self.interface.interrupt_in(endpoint, buffer).await.into_result() {
+            Ok(res) => Ok(res),
+            Err(_) => Err(UsbError::TransferError),
+        }
+    }
+
+    async fn interrupt_out(&self, endpoint: u8, buf: Vec<u8>) -> Result<usize, UsbError> {
+        match self.interface.interrupt_out(endpoint, buf).await.into_result() {
+            Ok(res) => Ok(res.actual_length()),
+            Err(_) => Err(UsbError::TransferError),
+        }
+    }
+    */
 }
 
 impl From<ControlIn> for nusb::transfer::ControlIn {

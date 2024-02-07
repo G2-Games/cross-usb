@@ -190,7 +190,6 @@ impl Device for UsbDevice {
         }
     }
 
-    /*
     async fn forget(&self) -> Result<(), UsbError> {
         let result = JsFuture::from(Promise::resolve(&self.device.forget())).await;
 
@@ -199,7 +198,6 @@ impl Device for UsbDevice {
             Err(_) => Err(UsbError::CommunicationError),
         }
     }
-    */
 
     async fn vendor_id(&self) -> u16 {
         self.device.vendor_id()
@@ -307,6 +305,34 @@ impl<'a> Interface<'a> for UsbInterface {
 
         Ok(transfer_result.bytes_written() as usize)
     }
+
+    /*
+    async fn interrupt_in(&self, endpoint: u8, length: usize) -> Result<Vec<u8>, UsbError> {
+        let promise = Promise::resolve(&self.device.transfer_in(endpoint, length as u32));
+
+        let result = JsFuture::from(promise).await;
+
+        let transfer_result: UsbInTransferResult = match result {
+            Ok(res) => res.into(),
+            Err(_) => return Err(UsbError::TransferError),
+        };
+
+        if transfer_result.
+
+        let data = match transfer_result.data() {
+            Some(res) => res.buffer(),
+            None => return Err(UsbError::TransferError),
+        };
+
+        let array = Uint8Array::new(&data);
+
+        Ok(array.to_vec())
+    }
+
+    async fn interrupt_out(&self, endpoint: u8, buf: Vec<u8>) -> Result<usize, UsbError> {
+        todo!()
+    }
+    */
 }
 
 impl From<ControlIn> for UsbControlTransferParameters {

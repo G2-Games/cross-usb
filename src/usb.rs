@@ -20,13 +20,11 @@ pub trait Device {
     /// request a new device with [crate::get_device] or [crate::get_device_filter]
     async fn reset(&self) -> Result<(), UsbError>;
 
-    /*
     /// Remove the device from the paired devices list, causing it to no longer be usable.
     /// You must request to reconnect using [crate::get_device] or [crate::get_device_filter]
     ///
-    /// **Note: Only does anything on WASM, on Native it simply resets the device**
+    /// **Note: on Native with `nusb` this simply resets the device**
     async fn forget(&self) -> Result<(), UsbError>;
-    */
 
     /// 16 bit device Product ID
     async fn product_id(&self) -> u16;
@@ -68,14 +66,15 @@ pub trait Interface<'a> {
     /// a slice, and returns a [Result] containing the number of bytes transferred
     async fn bulk_out(&self, endpoint: u8, data: &[u8]) -> Result<usize, UsbError>;
 
-    /* Interrupt transfers are a work in progress
-    async fn interrupt_in(&self, _endpoint: u8, _buf: Vec<u8>) {
-        unimplemented!()
-    }
+    /* TODO: Figure out interrupt transfers on Web USB
 
-    async fn interrupt_out(&self, _endpoint: u8, _buf: Vec<u8>) {
-        unimplemented!()
-    }
+    /// A USB interrupt in transfer (device to host).
+    /// Takes in an endpoint and a buffer to fill
+    async fn interrupt_in(&self, endpoint: u8, length: usize) -> Result<Vec<u8>, UsbError>;
+
+    /// A USB interrupt out transfer (host to device).
+    /// Takes in an endpoint and a buffer to send
+    async fn interrupt_out(&self, endpoint: u8, buf: Vec<u8>) -> Result<usize, UsbError>;
     */
 }
 
@@ -93,6 +92,9 @@ pub enum UsbError {
 
     #[error("device disconnected")]
     Disconnected,
+
+    #[error("device no longer valid")]
+    Invalid,
 }
 
 /// The type of USB transfer
