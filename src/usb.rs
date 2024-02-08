@@ -20,8 +20,7 @@ pub trait Device {
     /// request a new device with [crate::get_device] or [crate::get_device_filter]
     async fn reset(&self) -> Result<(), UsbError>;
 
-    /// Remove the device from the paired devices list, causing it to no longer be usable.
-    /// You must request to reconnect using [crate::get_device] or [crate::get_device_filter]
+    /// Remove the device from the paired devices list, causing it to no longer be usable. You must request to reconnect using [crate::get_device]
     ///
     /// **Note: on Native with `nusb` this simply resets the device**
     async fn forget(&self) -> Result<(), UsbError>;

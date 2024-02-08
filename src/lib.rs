@@ -60,7 +60,7 @@ pub use crate::context::UsbDevice;
 pub use crate::context::UsbInterface;
 
 /// Information about a USB device for finding it while trying
-/// to look for new USB devices using [get_device_filter]
+/// to look for new USB devices using [get_device]
 #[doc(inline)]
 pub use crate::context::DeviceFilter;
 

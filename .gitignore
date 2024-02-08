@@ -7,5 +7,7 @@ wasm-pack.log
 
 www
 
+
+.xwin-cache/
 .travis
 .appveyor
