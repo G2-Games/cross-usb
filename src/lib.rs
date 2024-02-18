@@ -1,11 +1,11 @@
 //! Cross USB is a USB library which works seamlessly across native and WASM targets.
 //!
 //! The idea is the user only has to write one way to access USB devices, which can be compiled
-//! to both WASM and native targets without any conditional compilation or configuration.
+//! to both WASM and native targets without any additional conditional compilation or configuration.
 //!
 //! For native device support, this library uses [nusb](https://docs.rs/nusb/latest/nusb/), a cross platform USB library written in Rust
 //! and comparable to the very popular `libusb` C library. Web Assembly support is provided by [web-sys](https://docs.rs/web-sys/latest/web_sys/)
-//! with the [Web USB API](https://developer.mozilla.org/en-US/docs/Web/API/WebUSB_API)
+//! with the [Web USB API](https://developer.mozilla.org/en-US/docs/Web/API/WebUSB_API).
 //!
 //! When a [UsbInterface] is dropped, it is automatically released.
 //!
@@ -83,7 +83,7 @@ pub use crate::context::DeviceFilter;
 #[doc(inline)]
 pub use crate::context::get_device;
 
-/// Macro to create a device filter easily from data.
+/// Macro to create a device filter more easily.
 ///
 /// The only valid keys are fields of the [DeviceFilter] struct.
 /// You may use as many or as few of them as you need, the rest

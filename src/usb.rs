@@ -17,7 +17,7 @@ pub trait Device {
     async fn open_interface(&self, number: u8) -> Result<UsbInterface, UsbError>;
 
     /// Reset the device, which causes it to no longer be usable. You must
-    /// request a new device with [crate::get_device] or [crate::get_device_filter]
+    /// request a new device with [crate::get_device]
     async fn reset(&self) -> Result<(), UsbError>;
 
     /// Remove the device from the paired devices list, causing it to no longer be usable. You must request to reconnect using [crate::get_device]

@@ -3,5 +3,5 @@ rustflags = ["--cfg=web_sys_unstable_apis"]
 
 [build]
 #just comment in the "current" target
-#target = "x86_64-unknown-linux-gnu"
-target = "wasm32-unknown-unknown"
+target = "x86_64-unknown-linux-gnu"
+#target = "wasm32-unknown-unknown"

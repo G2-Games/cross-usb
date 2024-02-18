@@ -70,7 +70,8 @@ pub async fn get_device(device_filter: Vec<DeviceFilter>) -> Result<UsbDevice, U
                 result
             })
         {
-            device_info = Some(prelim_dev_inf)
+            device_info = Some(prelim_dev_inf);
+            break
         }
     }
 
