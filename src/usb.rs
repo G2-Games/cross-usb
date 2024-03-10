@@ -78,7 +78,7 @@ pub trait Interface<'a> {
 }
 
 /// An error from a USB interface
-#[derive(Error, Debug)]
+#[derive(Error, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum UsbError {
     #[error("device not found")]
     DeviceNotFound,
