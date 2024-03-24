@@ -19,7 +19,7 @@
 //! ## Example:
 //! ```no_run
 //! # tokio_test::block_on(async {
-//! use cross_usb::usb::{Descriptor, Device, Interface, Recipient, ControlType, ControlIn};
+//! use cross_usb::usb::{UsbDescriptor, UsbDevice, UsbInterface, Recipient, ControlType, ControlIn};
 //! use cross_usb::device_filter;
 //!
 //! // Obtain a device descriptor (UsbDescriptor) using a DeviceFilter,
