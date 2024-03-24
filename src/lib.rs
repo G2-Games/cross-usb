@@ -9,24 +9,34 @@
 //!
 //! When a [UsbInterface] is dropped, it is automatically released.
 //!
+//! ### CURRENT LIMITATIONS:
+//! * Hotplug support is not implemented. Waiting on [hotplug support in nusb](https://github.com/kevinmehall/nusb/pull/20).
+//!
+//! * Until [this pull request](https://github.com/rustwasm/wasm-bindgen/issues/3155)
+//! is merged into wasm bindgen, getting a list of USB devices is not possible on WASM
+//! targets. However, this isn't a huge deal as the user gets a list to select from anyway.
+//!
 //! ## Example:
 //! ```no_run
 //! # tokio_test::block_on(async {
-//! use cross_usb::usb::{Device, Interface, Recipient, ControlType, ControlIn};
+//! use cross_usb::usb::{Descriptor, Device, Interface, Recipient, ControlType, ControlIn};
 //! use cross_usb::device_filter;
 //!
-//! // Obtain a device using its VendorID and ProductID
-//! let filter = vec![
+//! // Obtain a device descriptor (UsbDescriptor) using a DeviceFilter,
+//! // in this case with its VendorID and ProductID
+//! let filters = vec![
 //!     device_filter!{vendor_id: 0x054c, product_id: 0x00c9}
 //! ];
+//! let dev_descriptor = cross_usb::get_device(filters).await.expect("Failed to find device");
 //!
-//! let device = cross_usb::get_device(filter).await.expect("Failed to get device");
+//! // Open the device that the descriptor is describing
+//! let dev = dev_descriptor.open().await.expect("Failed to open device");
 //!
 //! // Obtain an interface of the device
-//! let interface = device.open_interface(0).await.expect("Failed to open interface");
+//! let interface = dev.open_interface(0).await.expect("Failed to open interface");
 //!
 //! // Send a Control transfer to the device, obtaining
-//! // the result and storing it in `result`, and you're done!
+//! // the result and storing it in `result`
 //! let result = interface.control_in(ControlIn {
 //!         control_type: ControlType::Vendor,
 //!         recipient: Recipient::Interface,
@@ -41,15 +51,18 @@
 //! ```
 pub mod usb;
 
+/// The context contains the platform specific implementation of the USB transfers
 #[cfg(not(target_family = "wasm"))]
 #[path = "./backend/native.rs"]
-/// The context contains the platform specific implementation of the USB transfers
 mod context;
 
 #[cfg(target_family = "wasm")]
 #[path = "./backend/wasm.rs"]
-/// The context contains the platform specific implementation of the USB transfers
 mod context;
+
+#[doc(inline)]
+/// An implementation of a USB device descriptor
+pub use crate::context::UsbDescriptor;
 
 #[doc(inline)]
 /// An implementation of a USB device
@@ -64,13 +77,12 @@ pub use crate::context::UsbInterface;
 #[doc(inline)]
 pub use crate::context::DeviceFilter;
 
-/// Gets a single device from a list of VendorID and ProductIDs
+/// Gets a single device descriptor ([UsbDescriptor]) from a list of VendorID and ProductIDs
 ///
 /// ## Example
 /// ```no_run
 /// # tokio_test::block_on(async {
 /// use cross_usb::{get_device, DeviceFilter, device_filter};
-///
 ///
 /// let filter = vec![
 ///     device_filter!{vendor_id: 0x054c, product_id: 0x00c9},
@@ -82,6 +94,11 @@ pub use crate::context::DeviceFilter;
 /// ```
 #[doc(inline)]
 pub use crate::context::get_device;
+
+/// Gets a list of devices from a list of VendorID and ProductIDs
+#[cfg(not(target_family = "wasm"))]
+#[doc(inline)]
+pub use crate::context::get_device_list;
 
 /// Macro to create a device filter more easily.
 ///

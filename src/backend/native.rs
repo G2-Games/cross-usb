@@ -1,7 +1,13 @@
-use crate::usb::{ControlIn, ControlOut, ControlType, Device, Interface, Recipient, UsbError};
+use crate::usb::{
+    ControlIn, ControlOut, ControlType, Descriptor, Device, Interface, Recipient, UsbError,
+};
+
+pub struct UsbDescriptor {
+    device_info: nusb::DeviceInfo,
+}
 
 pub struct UsbDevice {
-    device_info: nusb::DeviceInfo,
+    device_info: UsbDescriptor,
     device: nusb::Device,
 }
 
@@ -36,42 +42,39 @@ impl DeviceFilter {
     }
 }
 
-pub async fn get_device(device_filter: Vec<DeviceFilter>) -> Result<UsbDevice, UsbError> {
+pub async fn get_device(device_filters: Vec<DeviceFilter>) -> Result<UsbDescriptor, UsbError> {
     let devices = nusb::list_devices().unwrap();
 
     let mut device_info = None;
     for prelim_dev_inf in devices {
         // See if the device exists in the list
-        if device_filter
-            .iter()
-            .any(|info| {
-                let mut result = false;
+        if device_filters.iter().any(|info| {
+            let mut result = false;
 
-                if info.vendor_id.is_some() {
-                    result = info.vendor_id.unwrap() == prelim_dev_inf.vendor_id();
-                }
+            if info.vendor_id.is_some() {
+                result = info.vendor_id.unwrap() == prelim_dev_inf.vendor_id();
+            }
 
-                if info.product_id.is_some() {
-                    result = info.product_id.unwrap() == prelim_dev_inf.product_id();
-                }
+            if info.product_id.is_some() {
+                result = info.product_id.unwrap() == prelim_dev_inf.product_id();
+            }
 
-                if info.class.is_some() {
-                    result = info.class.unwrap() == prelim_dev_inf.class();
-                }
+            if info.class.is_some() {
+                result = info.class.unwrap() == prelim_dev_inf.class();
+            }
 
-                if info.subclass.is_some() {
-                    result = info.subclass.unwrap() == prelim_dev_inf.subclass();
-                }
+            if info.subclass.is_some() {
+                result = info.subclass.unwrap() == prelim_dev_inf.subclass();
+            }
 
-                if info.protocol.is_some() {
-                    result = info.protocol.unwrap() == prelim_dev_inf.protocol();
-                }
+            if info.protocol.is_some() {
+                result = info.protocol.unwrap() == prelim_dev_inf.protocol();
+            }
 
-                result
-            })
-        {
+            result
+        }) {
             device_info = Some(prelim_dev_inf);
-            break
+            break;
         }
     }
 
@@ -80,39 +83,69 @@ pub async fn get_device(device_filter: Vec<DeviceFilter>) -> Result<UsbDevice, U
         None => return Err(UsbError::DeviceNotFound),
     };
 
-    let device = match device_info.open() {
-        Ok(dev) => dev,
-        Err(_) => return Err(UsbError::CommunicationError),
-    };
-
-    Ok(UsbDevice {
-        device_info,
-        device,
-    })
+    Ok(UsbDescriptor { device_info })
 }
 
-impl Device for UsbDevice {
-    type UsbDevice = UsbDevice;
-    type UsbInterface = UsbInterface;
+pub async fn get_device_list(
+    device_filters: Vec<DeviceFilter>,
+) -> Result<Vec<UsbDescriptor>, UsbError> {
+    let devices_info = nusb::list_devices().unwrap();
 
-    async fn open_interface(&self, number: u8) -> Result<UsbInterface, UsbError> {
-        let interface = match self.device.claim_interface(number) {
-            Ok(inter) => inter,
-            Err(_) => return Err(UsbError::CommunicationError),
-        };
+    let mut devices = Vec::new();
+    for prelim_dev_inf in devices_info {
+        // See if the device exists in the list
+        if device_filters.iter().any(|info| {
+            let mut result = false;
 
-        Ok(UsbInterface { interface })
-    }
+            if info.vendor_id.is_some() {
+                result = info.vendor_id.unwrap() == prelim_dev_inf.vendor_id();
+            }
 
-    async fn reset(&self) -> Result<(), UsbError> {
-        match self.device.reset() {
-            Ok(_) => Ok(()),
-            Err(_) => Err(UsbError::CommunicationError),
+            if info.product_id.is_some() {
+                result = info.product_id.unwrap() == prelim_dev_inf.product_id();
+            }
+
+            if info.class.is_some() {
+                result = info.class.unwrap() == prelim_dev_inf.class();
+            }
+
+            if info.subclass.is_some() {
+                result = info.subclass.unwrap() == prelim_dev_inf.subclass();
+            }
+
+            if info.protocol.is_some() {
+                result = info.protocol.unwrap() == prelim_dev_inf.protocol();
+            }
+
+            result
+        }) {
+            devices.push(prelim_dev_inf);
         }
     }
 
-    async fn forget(&self) -> Result<(), UsbError> {
-        self.reset().await
+    if devices.is_empty() {
+        return Err(UsbError::DeviceNotFound);
+    }
+
+    let devices_opened: Vec<UsbDescriptor> = devices
+        .into_iter()
+        .map(|d| UsbDescriptor { device_info: d })
+        .collect();
+
+    Ok(devices_opened)
+}
+
+impl Descriptor for UsbDescriptor {
+    type Device = UsbDevice;
+
+    async fn open(self) -> Result<Self::Device, UsbError> {
+        match self.device_info.open() {
+            Ok(dev) => Ok(Self::Device {
+                device_info: self,
+                device: dev,
+            }),
+            Err(err) => Err(UsbError::CommunicationError(err.to_string())),
+        }
     }
 
     async fn vendor_id(&self) -> u16 {
@@ -137,6 +170,69 @@ impl Device for UsbDevice {
 
     async fn product_string(&self) -> Option<String> {
         self.device_info.product_string().map(str::to_string)
+    }
+}
+
+impl Device for UsbDevice {
+    type Interface = UsbInterface;
+
+    async fn open_interface(&self, number: u8) -> Result<Self::Interface, UsbError> {
+        let interface = match self.device.claim_interface(number) {
+            Ok(inter) => inter,
+            Err(err) => return Err(UsbError::CommunicationError(err.to_string())),
+        };
+
+        Ok(UsbInterface { interface })
+    }
+
+    async fn detach_and_open_interface(&self, number: u8) -> Result<Self::Interface, UsbError> {
+        let interface = match self.device.detach_and_claim_interface(number) {
+            Ok(inter) => inter,
+            Err(err) => return Err(UsbError::CommunicationError(err.to_string())),
+        };
+
+        Ok(UsbInterface { interface })
+    }
+
+    async fn reset(&self) -> Result<(), UsbError> {
+        match self.device.reset() {
+            Ok(_) => Ok(()),
+            Err(err) => Err(UsbError::CommunicationError(err.to_string())),
+        }
+    }
+
+    async fn forget(&self) -> Result<(), UsbError> {
+        self.reset().await
+    }
+
+    async fn product_id(&self) -> u16 {
+        self.device_info.product_id().await
+    }
+
+    async fn vendor_id(&self) -> u16 {
+        self.device_info.vendor_id().await
+    }
+
+    async fn class(&self) -> u8 {
+        self.device_info.class().await
+    }
+
+    async fn subclass(&self) -> u8 {
+        self.device_info.subclass().await
+    }
+
+    async fn manufacturer_string(&self) -> Option<String> {
+        self.device_info.manufacturer_string().await
+    }
+
+    async fn product_string(&self) -> Option<String> {
+        self.device_info.product_string().await
+    }
+}
+
+impl Drop for UsbDevice {
+    fn drop(&mut self) {
+        let _ = self.device.reset();
     }
 }
 

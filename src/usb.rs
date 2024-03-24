@@ -2,19 +2,49 @@
 //! This module contains the traits and associated functions and
 //! structs which allow for USB communication.
 
-use crate::context::UsbInterface;
 use thiserror::Error;
+
+pub trait Descriptor {
+    /// A unique USB Device
+    type Device;
+
+    /// Opens the USB connection, returning a [Self::Device]
+    async fn open(self) -> Result<Self::Device, UsbError>;
+
+    /// 16 bit device Product ID
+    async fn product_id(&self) -> u16;
+
+    /// 16 bit device Vendor ID
+    async fn vendor_id(&self) -> u16;
+
+    /// Device standard class
+    async fn class(&self) -> u8;
+
+    /// Device standard subclass
+    async fn subclass(&self) -> u8;
+
+    /// Get the manufacturer string string of the device, if available without device IO
+    ///
+    /// Not available on Windows
+    async fn manufacturer_string(&self) -> Option<String>;
+
+    /// Get the product string of the device, if available without device IO
+    async fn product_string(&self) -> Option<String>;
+}
 
 /// A unique USB device
 pub trait Device {
-    /// A unique USB Device
-    type UsbDevice;
-
     /// A unique Interface on a USB Device
-    type UsbInterface;
+    type Interface;
 
     /// Open a specific interface of the device
-    async fn open_interface(&self, number: u8) -> Result<UsbInterface, UsbError>;
+    async fn open_interface(&self, number: u8) -> Result<Self::Interface, UsbError>;
+
+    /// Open a specific interface of the device, detaching any
+    /// kernel drivers and claiming it.
+    ///
+    /// **Note:** This only has an effect on Native, and only on Linux.
+    async fn detach_and_open_interface(&self, number: u8) -> Result<Self::Interface, UsbError>;
 
     /// Reset the device, which causes it to no longer be usable. You must
     /// request a new device with [crate::get_device]
@@ -22,7 +52,7 @@ pub trait Device {
 
     /// Remove the device from the paired devices list, causing it to no longer be usable. You must request to reconnect using [crate::get_device]
     ///
-    /// **Note: on Native with `nusb` this simply resets the device**
+    /// **Note:** On Native this simply resets the device.
     async fn forget(&self) -> Result<(), UsbError>;
 
     /// 16 bit device Product ID
@@ -87,7 +117,7 @@ pub enum UsbError {
     TransferError,
 
     #[error("device communication failed")]
-    CommunicationError,
+    CommunicationError(String),
 
     #[error("device disconnected")]
     Disconnected,
