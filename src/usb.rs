@@ -141,7 +141,7 @@ pub enum Recipient {
     Other = 3,
 }
 
-/// Parameters for [Interface::control_in]
+/// Parameters for [UsbInterface::control_in]
 pub struct ControlIn {
     pub control_type: ControlType,
     pub recipient: Recipient,
@@ -151,7 +151,7 @@ pub struct ControlIn {
     pub length: u16,
 }
 
-/// Parameters for [Interface::control_out]
+/// Parameters for [UsbInterface::control_out]
 pub struct ControlOut<'a> {
     pub control_type: ControlType,
     pub recipient: Recipient,
