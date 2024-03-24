@@ -14,16 +14,19 @@ use crate::usb::{
 };
 
 #[wasm_bindgen]
+#[derive(Debug)]
 pub struct UsbDescriptor {
     device: WasmUsbDevice,
 }
 
 #[wasm_bindgen]
+#[derive(Debug)]
 pub struct UsbDevice {
     device: WasmUsbDevice,
 }
 
 #[wasm_bindgen]
+#[derive(Debug)]
 pub struct UsbInterface {
     device: WasmUsbDevice,
     _number: u8,

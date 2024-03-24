@@ -4,7 +4,7 @@
 
 use thiserror::Error;
 
-pub trait Descriptor {
+pub trait UsbDescriptor {
     /// A unique USB Device
     type Device;
 
@@ -33,7 +33,7 @@ pub trait Descriptor {
 }
 
 /// A unique USB device
-pub trait Device {
+pub trait UsbDevice {
     /// A unique Interface on a USB Device
     type Interface;
 
@@ -77,7 +77,7 @@ pub trait Device {
 }
 
 /// A specific interface of a USB device
-pub trait Interface<'a> {
+pub trait UsbInterface<'a> {
     /// A USB control in transfer (device to host)
     /// Returns a [Result] with the bytes in a `Vec<u8>`
     async fn control_in(&self, data: ControlIn) -> Result<Vec<u8>, UsbError>;

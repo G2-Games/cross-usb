@@ -7,7 +7,7 @@
 //! and comparable to the very popular `libusb` C library. Web Assembly support is provided by [web-sys](https://docs.rs/web-sys/latest/web_sys/)
 //! with the [Web USB API](https://developer.mozilla.org/en-US/docs/Web/API/WebUSB_API).
 //!
-//! When a [UsbInterface] is dropped, it is automatically released.
+//! When a [`UsbInterface`] is dropped, it is automatically released.
 //!
 //! ### CURRENT LIMITATIONS:
 //! * Hotplug support is not implemented. Waiting on [hotplug support in nusb](https://github.com/kevinmehall/nusb/pull/20).
@@ -62,22 +62,23 @@ mod context;
 
 #[doc(inline)]
 /// An implementation of a USB device descriptor
-pub use crate::context::UsbDescriptor;
+pub use crate::context::Descriptor;
 
 #[doc(inline)]
-/// An implementation of a USB device
-pub use crate::context::UsbDevice;
+/// A USB device, you must open a [`UsbInterface`] to perform transfers
+pub use crate::context::Device;
 
 #[doc(inline)]
-/// An implementation of a USB interface
-pub use crate::context::UsbInterface;
+/// A USB interface with which to perform transfers on
+pub use crate::context::Interface;
 
-/// Information about a USB device for finding it while trying
-/// to look for new USB devices using [get_device]
+/// Information about a USB device for use in [`get_device`]
+/// or [`get_device_list`]
 #[doc(inline)]
 pub use crate::context::DeviceFilter;
 
-/// Gets a single device descriptor ([UsbDescriptor]) from a list of VendorID and ProductIDs
+/// Gets a single (the first found) [`UsbDescriptor`] from a list of VendorID
+/// and ProductIDs
 ///
 /// ## Example
 /// ```no_run
@@ -95,7 +96,23 @@ pub use crate::context::DeviceFilter;
 #[doc(inline)]
 pub use crate::context::get_device;
 
-/// Gets a list of devices from a list of VendorID and ProductIDs
+/// Gets a list of [`UsbDescriptor`]s from a list of VendorID and ProductIDs
+///
+/// ## Example
+/// ```no_run
+/// # tokio_test::block_on(async {
+/// use cross_usb::{get_device_list, DeviceFilter, device_filter};
+///
+/// let filter = vec![
+///     device_filter!{vendor_id: 0x054c, product_id: 0x00c9},
+///     device_filter!{vendor_id: 0x054c},
+/// ];
+///
+/// let device_list = get_device_list(filter).await.expect("Could not find device in list");
+///
+/// /* Do something with the list of devices... */
+/// # })
+/// ```
 #[cfg(not(target_family = "wasm"))]
 #[doc(inline)]
 pub use crate::context::get_device_list;

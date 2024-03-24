@@ -1,18 +1,34 @@
 use crate::usb::{
-    ControlIn, ControlOut, ControlType, Descriptor, Device, Interface, Recipient, UsbError,
+    ControlIn, ControlOut, ControlType, UsbDescriptor, UsbDevice, UsbInterface, Recipient, UsbError,
 };
 
-pub struct UsbDescriptor {
+#[derive(Clone, Debug)]
+pub struct Descriptor {
     device_info: nusb::DeviceInfo,
 }
 
-pub struct UsbDevice {
-    device_info: UsbDescriptor,
+#[derive(Clone)]
+pub struct Device {
+    device_info: Descriptor,
     device: nusb::Device,
 }
 
-pub struct UsbInterface {
+impl std::fmt::Debug for Device {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?}", self.device_info)
+    }
+}
+
+#[derive(Clone)]
+pub struct Interface {
     interface: nusb::Interface,
+    number: u8,
+}
+
+impl std::fmt::Debug for Interface {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Interface {:?}", self.number)
+    }
 }
 
 #[derive(PartialEq, Clone, Default)]
@@ -42,7 +58,9 @@ impl DeviceFilter {
     }
 }
 
-pub async fn get_device(device_filters: Vec<DeviceFilter>) -> Result<UsbDescriptor, UsbError> {
+pub async fn get_device(
+    device_filters: Vec<DeviceFilter>
+) -> Result<Descriptor, UsbError> {
     let devices = nusb::list_devices().unwrap();
 
     let mut device_info = None;
@@ -83,12 +101,12 @@ pub async fn get_device(device_filters: Vec<DeviceFilter>) -> Result<UsbDescript
         None => return Err(UsbError::DeviceNotFound),
     };
 
-    Ok(UsbDescriptor { device_info })
+    Ok(Descriptor { device_info })
 }
 
 pub async fn get_device_list(
     device_filters: Vec<DeviceFilter>,
-) -> Result<Vec<UsbDescriptor>, UsbError> {
+) -> Result<impl Iterator<Item = Descriptor>, UsbError> {
     let devices_info = nusb::list_devices().unwrap();
 
     let mut devices = Vec::new();
@@ -127,16 +145,16 @@ pub async fn get_device_list(
         return Err(UsbError::DeviceNotFound);
     }
 
-    let devices_opened: Vec<UsbDescriptor> = devices
+    let devices_opened: Vec<Descriptor> = devices
         .into_iter()
-        .map(|d| UsbDescriptor { device_info: d })
+        .map(|d| Descriptor { device_info: d })
         .collect();
 
-    Ok(devices_opened)
+    Ok(devices_opened.into_iter())
 }
 
-impl Descriptor for UsbDescriptor {
-    type Device = UsbDevice;
+impl UsbDescriptor for Descriptor {
+    type Device = Device;
 
     async fn open(self) -> Result<Self::Device, UsbError> {
         match self.device_info.open() {
@@ -173,8 +191,8 @@ impl Descriptor for UsbDescriptor {
     }
 }
 
-impl Device for UsbDevice {
-    type Interface = UsbInterface;
+impl UsbDevice for Device {
+    type Interface = Interface;
 
     async fn open_interface(&self, number: u8) -> Result<Self::Interface, UsbError> {
         let interface = match self.device.claim_interface(number) {
@@ -182,7 +200,10 @@ impl Device for UsbDevice {
             Err(err) => return Err(UsbError::CommunicationError(err.to_string())),
         };
 
-        Ok(UsbInterface { interface })
+        Ok(Interface {
+            interface,
+            number
+        })
     }
 
     async fn detach_and_open_interface(&self, number: u8) -> Result<Self::Interface, UsbError> {
@@ -191,7 +212,10 @@ impl Device for UsbDevice {
             Err(err) => return Err(UsbError::CommunicationError(err.to_string())),
         };
 
-        Ok(UsbInterface { interface })
+        Ok(Interface {
+            interface,
+            number
+        })
     }
 
     async fn reset(&self) -> Result<(), UsbError> {
@@ -230,13 +254,13 @@ impl Device for UsbDevice {
     }
 }
 
-impl Drop for UsbDevice {
+impl Drop for Device {
     fn drop(&mut self) {
         let _ = self.device.reset();
     }
 }
 
-impl<'a> Interface<'a> for UsbInterface {
+impl<'a> UsbInterface<'a> for Interface {
     async fn control_in(&self, data: ControlIn) -> Result<Vec<u8>, UsbError> {
         let result = match self.interface.control_in(data.into()).await.into_result() {
             Ok(res) => res,
