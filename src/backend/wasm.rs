@@ -9,7 +9,9 @@ use web_sys::{
 };
 
 // Crate stuff
-use crate::usb::{ControlIn, ControlOut, ControlType, Device, Interface, Recipient, UsbError, Descriptor};
+use crate::usb::{
+    ControlIn, ControlOut, ControlType, Descriptor, Device, Interface, Recipient, UsbError,
+};
 
 #[wasm_bindgen]
 pub struct UsbDescriptor {
@@ -273,7 +275,7 @@ impl Descriptor for UsbDescriptor {
 
     async fn open(self) -> Result<Self::Device, UsbError> {
         Ok(Self::Device {
-            device: self.device
+            device: self.device,
         })
     }
 
@@ -313,7 +315,9 @@ impl Device for UsbDevice {
         let _device: WasmUsbDevice = match dev_promise {
             Ok(dev) => dev.into(),
             Err(err) => {
-                return Err(UsbError::CommunicationError(err.as_string().unwrap_or_default()));
+                return Err(UsbError::CommunicationError(
+                    err.as_string().unwrap_or_default(),
+                ));
             }
         };
 
@@ -332,7 +336,9 @@ impl Device for UsbDevice {
 
         match result {
             Ok(_) => Ok(()),
-            Err(err) => Err(UsbError::CommunicationError(err.as_string().unwrap_or_default())),
+            Err(err) => Err(UsbError::CommunicationError(
+                err.as_string().unwrap_or_default(),
+            )),
         }
     }
 
@@ -341,7 +347,9 @@ impl Device for UsbDevice {
 
         match result {
             Ok(_) => Ok(()),
-            Err(err) => Err(UsbError::CommunicationError(err.as_string().unwrap_or_default())),
+            Err(err) => Err(UsbError::CommunicationError(
+                err.as_string().unwrap_or_default(),
+            )),
         }
     }
 
