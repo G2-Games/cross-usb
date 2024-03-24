@@ -1,6 +1,6 @@
 [package]
 name = "cross_usb"
-version = "0.2.3"
+version = "0.3.0"
 authors = ["G2-Games <ke0bhogsg@gmail.com>"]
 repository = "https://github.com/G2-Games/cross-usb"
 documentation = "https://docs.rs/cross_usb"

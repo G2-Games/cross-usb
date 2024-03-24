@@ -22,7 +22,7 @@
 //! use cross_usb::usb::{UsbDescriptor, UsbDevice, UsbInterface, Recipient, ControlType, ControlIn};
 //! use cross_usb::device_filter;
 //!
-//! // Obtain a device descriptor (UsbDescriptor) using a DeviceFilter,
+//! // Obtain a device descriptor using a DeviceFilter,
 //! // in this case with its VendorID and ProductID
 //! let filters = vec![
 //!     device_filter!{vendor_id: 0x054c, product_id: 0x00c9}
