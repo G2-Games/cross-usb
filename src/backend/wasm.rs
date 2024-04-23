@@ -10,24 +10,24 @@ use web_sys::{
 
 // Crate stuff
 use crate::usb::{
-    ControlIn, ControlOut, ControlType, Descriptor, Device, Interface, Recipient, UsbError,
+    ControlIn, ControlOut, ControlType, UsbDescriptor, UsbDevice, UsbInterface, Recipient, UsbError,
 };
 
 #[wasm_bindgen]
 #[derive(Debug)]
-pub struct UsbDescriptor {
+pub struct Descriptor {
     device: WasmUsbDevice,
 }
 
 #[wasm_bindgen]
 #[derive(Debug)]
-pub struct UsbDevice {
+pub struct Device {
     device: WasmUsbDevice,
 }
 
 #[wasm_bindgen]
 #[derive(Debug)]
-pub struct UsbInterface {
+pub struct Interface {
     device: WasmUsbDevice,
     _number: u8,
 }
@@ -61,7 +61,7 @@ impl DeviceFilter {
 }
 
 #[wasm_bindgen]
-pub async fn get_device(device_filter: Vec<DeviceFilter>) -> Result<UsbDescriptor, js_sys::Error> {
+pub async fn get_device(device_filter: Vec<DeviceFilter>) -> Result<Descriptor, js_sys::Error> {
     let window = web_sys::window().unwrap();
 
     let navigator = window.navigator();
@@ -102,7 +102,7 @@ pub async fn get_device(device_filter: Vec<DeviceFilter>) -> Result<UsbDescripto
             result
         }) {
             let _open_promise = JsFuture::from(Promise::resolve(&device.open())).await?;
-            return Ok(UsbDescriptor { device });
+            return Ok(Descriptor { device });
         }
     }
 
@@ -161,7 +161,7 @@ pub async fn get_device(device_filter: Vec<DeviceFilter>) -> Result<UsbDescripto
 
     let _open_promise = JsFuture::from(Promise::resolve(&device.open())).await?;
 
-    Ok(UsbDescriptor { device })
+    Ok(Descriptor { device })
 }
 
 /*
@@ -273,8 +273,8 @@ pub async fn get_device_list(device_filter: Vec<DeviceFilter>) -> Result<Vec<Usb
 }
 */
 
-impl Descriptor for UsbDescriptor {
-    type Device = UsbDevice;
+impl UsbDescriptor for Descriptor {
+    type Device = Device;
 
     async fn open(self) -> Result<Self::Device, UsbError> {
         Ok(Self::Device {
@@ -307,10 +307,10 @@ impl Descriptor for UsbDescriptor {
     }
 }
 
-impl Device for UsbDevice {
-    type Interface = UsbInterface;
+impl UsbDevice for Device {
+    type Interface = Interface;
 
-    async fn open_interface(&self, number: u8) -> Result<UsbInterface, UsbError> {
+    async fn open_interface(&self, number: u8) -> Result<Interface, UsbError> {
         let dev_promise =
             JsFuture::from(Promise::resolve(&self.device.claim_interface(number))).await;
 
@@ -324,7 +324,7 @@ impl Device for UsbDevice {
             }
         };
 
-        Ok(UsbInterface {
+        Ok(Interface {
             device: self.device.clone(),
             _number: number,
         })
@@ -381,7 +381,7 @@ impl Device for UsbDevice {
     }
 }
 
-impl<'a> Interface<'a> for UsbInterface {
+impl<'a> UsbInterface<'a> for Interface {
     async fn control_in(&self, data: crate::usb::ControlIn) -> Result<Vec<u8>, UsbError> {
         let length = data.length;
         let params: UsbControlTransferParameters = data.into();
