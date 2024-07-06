@@ -1,15 +1,23 @@
 # Cross USB
+[![Lib.rs Version](https://img.shields.io/crates/v/cross_usb?style=for-the-badge&logo=rust&label=lib.rs&color=%23a68bfc)](https://lib.rs/crates/cross_usb)
+[![docs.rs](https://img.shields.io/docsrs/cross_usb?style=for-the-badge)](https://docs.rs/cross_usb/)
 
 A USB library which works seamlessly across most native and WASM targets.
 
-[Crates.io](https://crates.io/crates/cross_usb)
-
-[Documentation](https://docs.rs/cross_usb/)
-
 ------------------
 
-> [!NOTE]  
+> [!NOTE]
 > Web USB only works in Chromium based browsers for now.
+
+> [!NOTE]
+> Web USB has certain interation requirements in browsers, along with requiring
+> a **Secure context**. Please read more about this on the
+> [mdn web docs](https://developer.mozilla.org/en-US/docs/Web/API/WebUSB_API)
+
+> [!IMPORTANT]
+> When compiling this crate on a WASM target, you must use either
+> `RUSTFLAGS=--cfg=web_sys_unstable_apis` or by passing the argument in a
+> `.cargo/config.toml` file. Read more here: https://rustwasm.github.io/wasm-bindgen/web-sys/unstable-apis.html
 
 ## Dependencies
 
