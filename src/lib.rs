@@ -165,6 +165,7 @@ macro_rules! device_filter {
     }
 }
 
+#[cfg(target_family = "wasm")]
 #[cfg(not(web_sys_unstable_apis))]
 compile_error!{
     "Cannot compile `web-sys` (a dependency of this crate) with USB support without `web_sys_unstable_apis`!
