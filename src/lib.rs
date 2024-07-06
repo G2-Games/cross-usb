@@ -16,6 +16,10 @@
 //! is merged into wasm bindgen, getting a list of USB devices is not possible on WASM
 //! targets. However, this isn't a huge deal as the user gets a list to select from anyway.
 //!
+//! * When compiling this crate on a WASM target, you must use either
+//! `RUSTFLAGS=--cfg=web_sys_unstable_apis` or by passing the argument in a
+//! `.cargo/config.toml` file. Read more here: https://rustwasm.github.io/wasm-bindgen/web-sys/unstable-apis.html
+//!
 //! ## Example:
 //! ```no_run
 //! # tokio_test::block_on(async {
