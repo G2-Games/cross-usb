@@ -70,6 +70,7 @@ pub mod prelude {
 mod context;
 
 #[cfg(target_family = "wasm")]
+#[cfg(web_sys_unstable_apis)]
 #[path = "./backend/wasm.rs"]
 mod context;
 
@@ -158,4 +159,10 @@ macro_rules! device_filter {
             ..cross_usb::DeviceFilter::default()
         }
     }
+}
+
+#[cfg(not(web_sys_unstable_apis))]
+compile_error!{
+    "Cannot compile `web-sys` (a dependency of this crate) with USB support without `web_sys_unstable_apis`!
+Please check https://rustwasm.github.io/wasm-bindgen/web-sys/unstable-apis.html for more info."
 }
