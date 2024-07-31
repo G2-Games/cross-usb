@@ -10,7 +10,7 @@ A USB library which works seamlessly across most native and WASM targets.
 > Web USB only works in Chromium based browsers for now.
 
 > [!NOTE]
-> Web USB has certain interation requirements in browsers, along with requiring
+> Web USB has certain interaction requirements in browsers, along with requiring
 > a **Secure context**. Please read more about this on the
 > [mdn web docs](https://developer.mozilla.org/en-US/docs/Web/API/WebUSB_API)
 
