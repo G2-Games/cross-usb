@@ -21,9 +21,13 @@ A USB library which works seamlessly across most native and WASM targets.
 
 ## Dependencies
 
-For native USB, the crate utilizies [nusb](https://github.com/kevinmehall/nusb), a pure rust library similar to the very popular libusb.
+For native USB, the crate utilizies [nusb](https://github.com/kevinmehall/nusb),
+a pure rust library similar to the very popular libusb. **If you don't need WASM
+support, just using `nusb` is the way to go!**
 
-For WASM, this crate utilizes [web-sys](https://crates.io/crates/web-sys) which gives access to browser API calls, and in this case is used to interact with [WebUSB](https://developer.mozilla.org/en-US/docs/Web/API/WebUSB_API)
+For WASM, this crate utilizes [web-sys](https://crates.io/crates/web-sys) which
+gives access to browser API calls, and in this case is used to interact with
+[WebUSB](https://developer.mozilla.org/en-US/docs/Web/API/WebUSB_API).
 
 ## Example
 To learn about how USB communciations work, check out [USB in a NutShell](https://www.beyondlogic.org/usbnutshell/usb1.shtml).
@@ -63,6 +67,8 @@ Check out the [documentation](https://docs.rs/cross_usb/latest/) as well!
 
 ## TODO
 
-- [ ] Add choice for native backend between `libusb` wrapper and pure rust `nusb`
+- [ ] Add choice for native backend between `libusb` wrapper and pure rust
+`nusb`
 - [ ] Allow platform-specific operations if the user requires them
-- [ ] Hot plug support... requires either using `libusb` as an optional backend or for [`nusb` to implement it](https://github.com/kevinmehall/nusb/issues/5)
+- [ ] Hot plug support... requires either using `libusb` as an optional backend
+or for [`nusb` to implement it](https://github.com/kevinmehall/nusb/issues/5)
