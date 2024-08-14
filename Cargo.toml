@@ -1,13 +1,13 @@
 [package]
 name = "cross_usb"
-version = "0.3.4"
+version = "0.4.0"
 authors = ["G2-Games <ke0bhogsg@gmail.com>"]
 repository = "https://github.com/G2-Games/cross-usb"
 documentation = "https://docs.rs/cross_usb"
 description = """
 A Rust USB library which works seamlessly across both native and WASM targets.
 """
-keywords = ["usb", "wasm", "web-usb"]
+keywords = ["usb", "wasm", "web-usb", "webusb"]
 categories = ["wasm", "web-programming", "hardware-support"]
 readme = "README.md"
 license = "MIT"
@@ -17,7 +17,7 @@ edition = "2021"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-thiserror = "1.0.56"
+thiserror = "1.0"
 
 [dev-dependencies]
 tokio-test = "0.4.3"
