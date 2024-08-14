@@ -4,7 +4,7 @@
 
 use thiserror::Error;
 
-pub trait UsbDescriptor {
+pub trait UsbDeviceInfo {
     /// A unique USB Device
     type Device;
 
@@ -96,7 +96,6 @@ pub trait UsbInterface<'a> {
     async fn bulk_out(&self, endpoint: u8, data: &[u8]) -> Result<usize, UsbError>;
 
     /* TODO: Figure out interrupt transfers on Web USB
-
     /// A USB interrupt in transfer (device to host).
     /// Takes in an endpoint and a buffer to fill
     async fn interrupt_in(&self, endpoint: u8, length: usize) -> Result<Vec<u8>, UsbError>;

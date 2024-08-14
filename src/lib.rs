@@ -9,16 +9,12 @@
 //!
 //! When an [`Interface`] is dropped, it is automatically released.
 //!
-//! ### CURRENT LIMITATIONS:
+//! ## CURRENT LIMITATIONS:
 //! * Hotplug support is not implemented. Waiting on [hotplug support in nusb](https://github.com/kevinmehall/nusb/pull/20).
 //!
-//! * Until [this pull request](https://github.com/rustwasm/wasm-bindgen/issues/3155)
-//! is merged into wasm bindgen, getting a list of USB devices is not possible on WASM
-//! targets. However, this isn't a huge deal as the user gets a list to select from anyway.
-//!
-//! * When compiling this crate on a WASM target, you must use either
+//! * When compiling this crate on a WASM target, you **must** use either
 //! `RUSTFLAGS=--cfg=web_sys_unstable_apis` or by passing the argument in a
-//! `.cargo/config.toml` file. Read more here: https://rustwasm.github.io/wasm-bindgen/web-sys/unstable-apis.html
+//! `.cargo/config.toml` file. Read more here: <https://rustwasm.github.io/wasm-bindgen/web-sys/unstable-apis.html>
 //!
 //! ## Example:
 //! ```no_run
@@ -63,7 +59,7 @@ pub mod usb;
 /// use cross_usb::prelude::*;
 /// ```
 pub mod prelude {
-    pub use crate::usb::UsbDescriptor;
+    pub use crate::usb::UsbDeviceInfo;
     pub use crate::usb::UsbDevice;
     pub use crate::usb::UsbInterface;
 }
@@ -79,9 +75,12 @@ mod context;
 mod context;
 
 #[doc(inline)]
-/// A descriptor of a USB device, containing information about a device
+/// Information about a USB device, containing information about a device
 /// without claiming it
-pub use crate::context::Descriptor;
+///
+/// **Note:** On WASM targets, a device *must* be claimed in order to get
+/// information about it in normal circumstances.
+pub use crate::context::DeviceInfo;
 
 #[doc(inline)]
 /// A USB device, you must open an [`Interface`] to perform transfers
@@ -96,7 +95,7 @@ pub use crate::context::Interface;
 #[doc(inline)]
 pub use crate::context::DeviceFilter;
 
-/// Gets a single (the first found) device as a [`Descriptor`] from a list of VendorID
+/// Gets a single (the first found) device as a [`DeviceInfo`] from a list of VendorID
 /// and ProductIDs
 ///
 /// ## Example
@@ -115,7 +114,7 @@ pub use crate::context::DeviceFilter;
 #[doc(inline)]
 pub use crate::context::get_device;
 
-/// Gets a list of [`Descriptor`]s from a list of VendorID and ProductIDs
+/// Gets a list of [`DeviceInfo`]s from a list of VendorID and ProductIDs
 ///
 /// ## Example
 /// ```no_run

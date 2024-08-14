@@ -1,15 +1,15 @@
 use crate::usb::{
-    ControlIn, ControlOut, ControlType, UsbDescriptor, UsbDevice, UsbInterface, Recipient, UsbError,
+    ControlIn, ControlOut, ControlType, UsbDeviceInfo, UsbDevice, UsbInterface, Recipient, UsbError,
 };
 
 #[derive(Clone, Debug)]
-pub struct Descriptor {
+pub struct DeviceInfo {
     device_info: nusb::DeviceInfo,
 }
 
 #[derive(Clone)]
 pub struct Device {
-    device_info: Descriptor,
+    device_info: DeviceInfo,
     device: nusb::Device,
 }
 
@@ -60,7 +60,7 @@ impl DeviceFilter {
 
 pub async fn get_device(
     device_filters: Vec<DeviceFilter>
-) -> Result<Descriptor, UsbError> {
+) -> Result<DeviceInfo, UsbError> {
     let devices = nusb::list_devices().unwrap();
 
     let mut device_info = None;
@@ -101,12 +101,12 @@ pub async fn get_device(
         None => return Err(UsbError::DeviceNotFound),
     };
 
-    Ok(Descriptor { device_info })
+    Ok(DeviceInfo { device_info })
 }
 
 pub async fn get_device_list(
     device_filters: Vec<DeviceFilter>,
-) -> Result<impl Iterator<Item = Descriptor>, UsbError> {
+) -> Result<impl Iterator<Item = DeviceInfo>, UsbError> {
     let devices_info = nusb::list_devices().unwrap();
 
     let mut devices = Vec::new();
@@ -145,15 +145,15 @@ pub async fn get_device_list(
         return Err(UsbError::DeviceNotFound);
     }
 
-    let devices_opened: Vec<Descriptor> = devices
+    let devices_opened: Vec<DeviceInfo> = devices
         .into_iter()
-        .map(|d| Descriptor { device_info: d })
+        .map(|d| DeviceInfo { device_info: d })
         .collect();
 
     Ok(devices_opened.into_iter())
 }
 
-impl UsbDescriptor for Descriptor {
+impl UsbDeviceInfo for DeviceInfo {
     type Device = Device;
 
     async fn open(self) -> Result<Self::Device, UsbError> {

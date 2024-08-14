@@ -48,14 +48,11 @@ features = [
 [target.'cfg(not(target_family = "wasm"))'.dependencies]
 nusb = "0.1"
 
-[profile.release]
-lto = true
-strip = true
-opt-level = "z"
-codegen-units = 1
-
 [package.metadata.wasm-pack.profile.dev.wasm-bindgen]
 dwarf-debug-info = true
 
 [package.metadata.docs.rs]
 targets = ["x86_64-unknown-linux-gnu", "x86_64-pc-windows-msvc", "x86_64-apple-darwin", "aarch64-apple-darwin", "wasm32-unknown-unknown"]
+
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(web_sys_unstable_apis)'] }

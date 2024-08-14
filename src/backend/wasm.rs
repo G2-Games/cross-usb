@@ -10,12 +10,12 @@ use web_sys::{
 
 // Crate stuff
 use crate::usb::{
-    ControlIn, ControlOut, ControlType, UsbDescriptor, UsbDevice, UsbInterface, Recipient, UsbError,
+    ControlIn, ControlOut, ControlType, UsbDeviceInfo, UsbDevice, UsbInterface, Recipient, UsbError,
 };
 
 #[wasm_bindgen]
 #[derive(Debug)]
-pub struct Descriptor {
+pub struct DeviceInfo {
     device: WasmUsbDevice,
 }
 
@@ -61,7 +61,7 @@ impl DeviceFilter {
 }
 
 #[wasm_bindgen]
-pub async fn get_device(device_filter: Vec<DeviceFilter>) -> Result<Descriptor, js_sys::Error> {
+pub async fn get_device(device_filter: Vec<DeviceFilter>) -> Result<DeviceInfo, js_sys::Error> {
     let window = web_sys::window().unwrap();
 
     let navigator = window.navigator();
@@ -102,7 +102,7 @@ pub async fn get_device(device_filter: Vec<DeviceFilter>) -> Result<Descriptor, 
             result
         }) {
             let _open_promise = JsFuture::from(Promise::resolve(&device.open())).await?;
-            return Ok(Descriptor { device });
+            return Ok(DeviceInfo { device });
         }
     }
 
@@ -161,12 +161,11 @@ pub async fn get_device(device_filter: Vec<DeviceFilter>) -> Result<Descriptor, 
 
     let _open_promise = JsFuture::from(Promise::resolve(&device.open())).await?;
 
-    Ok(Descriptor { device })
+    Ok(DeviceInfo { device })
 }
 
-/*
 #[wasm_bindgen]
-pub async fn get_device_list(device_filter: Vec<DeviceFilter>) -> Result<Vec<UsbDescriptor>, js_sys::Error> {
+pub async fn get_device_list(device_filter: Vec<DeviceFilter>) -> Result<Vec<DeviceInfo>, js_sys::Error> {
     let window = web_sys::window().unwrap();
 
     let navigator = window.navigator();
@@ -208,7 +207,7 @@ pub async fn get_device_list(device_filter: Vec<DeviceFilter>) -> Result<Vec<Usb
             result
         }) {
             let _open_promise = JsFuture::from(Promise::resolve(&device.open())).await?;
-            devices.push(UsbDescriptor { device });
+            devices.push(DeviceInfo { device });
         }
     }
 
@@ -267,13 +266,12 @@ pub async fn get_device_list(device_filter: Vec<DeviceFilter>) -> Result<Vec<Usb
 
     let _open_promise = JsFuture::from(Promise::resolve(&device.open())).await?;
 
-    devices.push(UsbDescriptor { device });
+    devices.push(DeviceInfo { device });
 
     return Ok(devices);
 }
-*/
 
-impl UsbDescriptor for Descriptor {
+impl UsbDeviceInfo for DeviceInfo {
     type Device = Device;
 
     async fn open(self) -> Result<Self::Device, UsbError> {
@@ -283,11 +281,11 @@ impl UsbDescriptor for Descriptor {
     }
 
     async fn product_id(&self) -> u16 {
-        self.device.vendor_id()
+        self.device.product_id()
     }
 
     async fn vendor_id(&self) -> u16 {
-        self.device.product_id()
+        self.device.vendor_id()
     }
 
     async fn class(&self) -> u8 {
