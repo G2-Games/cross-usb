@@ -10,7 +10,7 @@ use web_sys::{
 
 // Crate stuff
 use crate::usb::{
-    ControlIn, ControlOut, ControlType, UsbDeviceInfo, UsbDevice, UsbInterface, Recipient, UsbError,
+    ControlIn, ControlOut, ControlType, UsbDeviceInfo, UsbDevice, UsbInterface, Recipient, Error,
 };
 
 #[wasm_bindgen]
@@ -274,7 +274,7 @@ pub async fn get_device_list(device_filter: Vec<DeviceFilter>) -> Result<Vec<Dev
 impl UsbDeviceInfo for DeviceInfo {
     type Device = Device;
 
-    async fn open(self) -> Result<Self::Device, UsbError> {
+    async fn open(self) -> Result<Self::Device, Error> {
         Ok(Self::Device {
             device: self.device,
         })
@@ -308,7 +308,7 @@ impl UsbDeviceInfo for DeviceInfo {
 impl UsbDevice for Device {
     type Interface = Interface;
 
-    async fn open_interface(&self, number: u8) -> Result<Interface, UsbError> {
+    async fn open_interface(&self, number: u8) -> Result<Interface, Error> {
         let dev_promise =
             JsFuture::from(Promise::resolve(&self.device.claim_interface(number))).await;
 
@@ -316,7 +316,7 @@ impl UsbDevice for Device {
         let _device: WasmUsbDevice = match dev_promise {
             Ok(dev) => dev.into(),
             Err(err) => {
-                return Err(UsbError::CommunicationError(
+                return Err(Error::CommunicationError(
                     err.as_string().unwrap_or_default(),
                 ));
             }
@@ -328,27 +328,27 @@ impl UsbDevice for Device {
         })
     }
 
-    async fn detach_and_open_interface(&self, number: u8) -> Result<Self::Interface, UsbError> {
+    async fn detach_and_open_interface(&self, number: u8) -> Result<Self::Interface, Error> {
         self.open_interface(number).await
     }
 
-    async fn reset(&self) -> Result<(), UsbError> {
+    async fn reset(&self) -> Result<(), Error> {
         let result = JsFuture::from(Promise::resolve(&self.device.reset())).await;
 
         match result {
             Ok(_) => Ok(()),
-            Err(err) => Err(UsbError::CommunicationError(
+            Err(err) => Err(Error::CommunicationError(
                 err.as_string().unwrap_or_default(),
             )),
         }
     }
 
-    async fn forget(&self) -> Result<(), UsbError> {
+    async fn forget(&self) -> Result<(), Error> {
         let result = JsFuture::from(Promise::resolve(&self.device.forget())).await;
 
         match result {
             Ok(_) => Ok(()),
-            Err(err) => Err(UsbError::CommunicationError(
+            Err(err) => Err(Error::CommunicationError(
                 err.as_string().unwrap_or_default(),
             )),
         }
@@ -380,7 +380,7 @@ impl UsbDevice for Device {
 }
 
 impl<'a> UsbInterface<'a> for Interface {
-    async fn control_in(&self, data: crate::usb::ControlIn) -> Result<Vec<u8>, UsbError> {
+    async fn control_in(&self, data: crate::usb::ControlIn) -> Result<Vec<u8>, Error> {
         let length = data.length;
         let params: UsbControlTransferParameters = data.into();
 
@@ -389,12 +389,12 @@ impl<'a> UsbInterface<'a> for Interface {
 
         let transfer_result: UsbInTransferResult = match result {
             Ok(res) => res.into(),
-            Err(_) => return Err(UsbError::TransferError),
+            Err(_) => return Err(Error::TransferError),
         };
 
         let data = match transfer_result.data() {
             Some(res) => res.buffer(),
-            None => return Err(UsbError::TransferError),
+            None => return Err(Error::TransferError),
         };
 
         let array = Uint8Array::new(&data);
@@ -402,7 +402,7 @@ impl<'a> UsbInterface<'a> for Interface {
         Ok(array.to_vec())
     }
 
-    async fn control_out(&self, data: crate::usb::ControlOut<'a>) -> Result<usize, UsbError> {
+    async fn control_out(&self, data: crate::usb::ControlOut<'a>) -> Result<usize, Error> {
         let array = Uint8Array::from(data.data);
         let array_obj = Object::try_from(&array).unwrap();
         let params: UsbControlTransferParameters = data.into();
@@ -415,25 +415,25 @@ impl<'a> UsbInterface<'a> for Interface {
         .await
         {
             Ok(res) => res.into(),
-            Err(_) => return Err(UsbError::TransferError),
+            Err(_) => return Err(Error::TransferError),
         };
 
         Ok(result.bytes_written() as usize)
     }
 
-    async fn bulk_in(&self, endpoint: u8, length: usize) -> Result<Vec<u8>, UsbError> {
+    async fn bulk_in(&self, endpoint: u8, length: usize) -> Result<Vec<u8>, Error> {
         let promise = Promise::resolve(&self.device.transfer_in(endpoint, length as u32));
 
         let result = JsFuture::from(promise).await;
 
         let transfer_result: UsbInTransferResult = match result {
             Ok(res) => res.into(),
-            Err(_) => return Err(UsbError::TransferError),
+            Err(_) => return Err(Error::TransferError),
         };
 
         let data = match transfer_result.data() {
             Some(res) => res.buffer(),
-            None => return Err(UsbError::TransferError),
+            None => return Err(Error::TransferError),
         };
 
         let array = Uint8Array::new(&data);
@@ -441,7 +441,7 @@ impl<'a> UsbInterface<'a> for Interface {
         Ok(array.to_vec())
     }
 
-    async fn bulk_out(&self, endpoint: u8, data: &[u8]) -> Result<usize, UsbError> {
+    async fn bulk_out(&self, endpoint: u8, data: &[u8]) -> Result<usize, Error> {
         let array = Uint8Array::from(data);
         let array_obj = Object::try_from(&array).unwrap();
 
@@ -455,7 +455,7 @@ impl<'a> UsbInterface<'a> for Interface {
 
         let transfer_result: UsbOutTransferResult = match result {
             Ok(res) => res.into(),
-            Err(_) => return Err(UsbError::TransferError),
+            Err(_) => return Err(Error::TransferError),
         };
 
         Ok(transfer_result.bytes_written() as usize)

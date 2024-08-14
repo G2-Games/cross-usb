@@ -7,14 +7,18 @@
 //! and comparable to the very popular `libusb` C library. Web Assembly support is provided by [web-sys](https://docs.rs/web-sys/latest/web_sys/)
 //! with the [Web USB API](https://developer.mozilla.org/en-US/docs/Web/API/WebUSB_API).
 //!
-//! When an [`Interface`] is dropped, it is automatically released.
 //!
 //! ## CURRENT LIMITATIONS:
-//! * Hotplug support is not implemented. Waiting on [hotplug support in nusb](https://github.com/kevinmehall/nusb/pull/20).
+//! * Isochronous and interrupt transfers are currently not supported. This
+//! will probably change in a future release.
+//!
+//! * Hotplug support is not implemented. Waiting on
+//! [hotplug support in nusb](https://github.com/kevinmehall/nusb/pull/20).
 //!
 //! * When compiling this crate on a WASM target, you **must** use either
 //! `RUSTFLAGS=--cfg=web_sys_unstable_apis` or by passing the argument in a
-//! `.cargo/config.toml` file. Read more here: <https://rustwasm.github.io/wasm-bindgen/web-sys/unstable-apis.html>
+//! `.cargo/config.toml` file. Read more here:
+//! <https://rustwasm.github.io/wasm-bindgen/web-sys/unstable-apis.html>
 //!
 //! ## Example:
 //! ```no_run
@@ -79,19 +83,23 @@ mod context;
 /// without claiming it
 ///
 /// **Note:** On WASM targets, a device *must* be claimed in order to get
-/// information about it in normal circumstances.
+/// information about it in normal circumstances, so this is not as useful
+/// on WASM.
 pub use crate::context::DeviceInfo;
 
 #[doc(inline)]
-/// A USB device, you must open an [`Interface`] to perform transfers
+/// A USB device, you must open an [`Interface`] to perform transfers.
 pub use crate::context::Device;
 
 #[doc(inline)]
-/// A USB interface with which to perform transfers on
+/// A USB interface to perform transfers with.
 pub use crate::context::Interface;
 
-/// Information about a USB device for use in [`get_device`]
-/// or [`get_device_list`]
+/// Information about a USB device for use in [`get_device`] or
+/// [`get_device_list`].
+///
+/// It's easiest to construct this using the [`device_filter`]
+/// macro.
 #[doc(inline)]
 pub use crate::context::DeviceFilter;
 
@@ -164,8 +172,7 @@ macro_rules! device_filter {
     }
 }
 
-#[cfg(target_family = "wasm")]
-#[cfg(not(web_sys_unstable_apis))]
+#[cfg(all(target_family = "wasm", not(web_sys_unstable_apis)))]
 compile_error!{
     "Cannot compile `web-sys` (a dependency of this crate) with USB support without `web_sys_unstable_apis`!
 Please check https://rustwasm.github.io/wasm-bindgen/web-sys/unstable-apis.html for more info."
