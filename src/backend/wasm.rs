@@ -410,7 +410,9 @@ impl<'a> UsbInterface<'a> for Interface {
         let result: UsbOutTransferResult = match JsFuture::from(Promise::resolve(
             &self
                 .device
-                .control_transfer_out_with_buffer_source(&params, array_obj),
+                .control_transfer_out_with_buffer_source(&params, array_obj)
+                .map_err(|j| Error::CommunicationError(j.as_string().unwrap_or_default()))?
+                .into(),
         ))
         .await
         {
@@ -448,7 +450,9 @@ impl<'a> UsbInterface<'a> for Interface {
         let promise = Promise::resolve(
             &self
                 .device
-                .transfer_out_with_buffer_source(endpoint, array_obj),
+                .transfer_out_with_buffer_source(endpoint, array_obj)
+                .map_err(|j| Error::CommunicationError(j.as_string().unwrap_or_default()))?
+                .into(),
         );
 
         let result = JsFuture::from(promise).await;
