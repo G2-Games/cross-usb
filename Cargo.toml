@@ -11,16 +11,16 @@ keywords = ["usb", "wasm", "web-usb", "webusb"]
 categories = ["wasm", "web-programming", "hardware-support"]
 readme = "README.md"
 license = "MIT"
-edition = "2021"
+edition = "2024"
 
 [lib]
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-thiserror = "1.0"
+thiserror = "2.0"
 
 [dev-dependencies]
-tokio-test = "0.4.3"
+tokio-test = "0.4"
 
 # Wasm deps
 [target.'cfg(target_family = "wasm")'.dependencies]
