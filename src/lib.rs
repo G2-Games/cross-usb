@@ -10,15 +10,15 @@
 //!
 //! ## CURRENT LIMITATIONS:
 //! * Isochronous and interrupt transfers are currently not supported. This
-//! will probably change in a future release.
+//!   will probably change in a future release.
 //!
 //! * Hotplug support is not implemented. Waiting on
-//! [hotplug support in nusb](https://github.com/kevinmehall/nusb/pull/20).
+//!   [hotplug support in nusb](https://github.com/kevinmehall/nusb/pull/20).
 //!
 //! * When compiling this crate on a WASM target, you **must** use either
-//! `RUSTFLAGS=--cfg=web_sys_unstable_apis` or by passing the argument in a
-//! `.cargo/config.toml` file. Read more here:
-//! <https://rustwasm.github.io/wasm-bindgen/web-sys/unstable-apis.html>
+//!   `RUSTFLAGS=--cfg=web_sys_unstable_apis` or by passing the argument in a
+//!   `.cargo/config.toml` file. Read more here:
+//!   <https://rustwasm.github.io/wasm-bindgen/web-sys/unstable-apis.html>
 //!
 //! ## Example:
 //! ```no_run
@@ -175,5 +175,5 @@ macro_rules! device_filter {
 #[cfg(all(target_family = "wasm", not(web_sys_unstable_apis)))]
 compile_error!{
     "Cannot compile `web-sys` (a dependency of this crate) with USB support without `web_sys_unstable_apis`!
-Please check https://rustwasm.github.io/wasm-bindgen/web-sys/unstable-apis.html for more info."
+Please check https://wasm-bindgen.github.io/wasm-bindgen/web-sys/unstable-apis.html for more info."
 }

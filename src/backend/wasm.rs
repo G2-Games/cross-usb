@@ -268,7 +268,7 @@ pub async fn get_device_list(device_filter: Vec<DeviceFilter>) -> Result<Vec<Dev
 
     devices.push(DeviceInfo { device });
 
-    return Ok(devices);
+    Ok(devices)
 }
 
 impl UsbDeviceInfo for DeviceInfo {
