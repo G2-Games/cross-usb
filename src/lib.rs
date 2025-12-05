@@ -18,7 +18,7 @@
 //! * When compiling this crate on a WASM target, you **must** use either
 //!   `RUSTFLAGS=--cfg=web_sys_unstable_apis` or by passing the argument in a
 //!   `.cargo/config.toml` file. Read more here:
-//!   <https://rustwasm.github.io/wasm-bindgen/web-sys/unstable-apis.html>
+//!   <https://wasm-bindgen.github.io/wasm-bindgen/web-sys/unstable-apis.html>
 //!
 //! ## Example:
 //! ```no_run
